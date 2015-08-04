@@ -1,0 +1,34 @@
+{
+  "name": "angular-vendor-media-type",
+  "version": "1.0.0",
+  "description": "A simple AngularJS plugin for seting up the vendor specific media type for every $http request",
+  "main": "dist/angular-vendor-media-type.js",
+  "scripts": {
+    "preinstall": "coffee -o dist -c src/coffee/*.coffee",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jmnarloch/angular-vendor-media-type.git"
+  },
+  "keywords": [
+    "angular"
+  ],
+  "author": "Jakub Narloch",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jmnarloch/angular-vendor-media-type/issues"
+  },
+  "homepage": "https://github.com/jmnarloch/angular-vendor-media-type#readme",
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "coffee-script": "^1.9.3",
+    "karma": "^0.13.3",
+    "karma-chai": "^0.1.0",
+    "karma-coffee-preprocessor": "^0.3.0",
+    "karma-mocha": "^0.2.0",
+    "karma-phantomjs-launcher": "^0.2.0",
+    "mocha": "^2.2.5",
+    "phantomjs": "^1.9.17"
+  }
+}
