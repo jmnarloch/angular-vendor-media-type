@@ -2,7 +2,7 @@ angular.module 'ngVendorMimeType', []
 .config ['$httpProvider', ($httpProvider) ->
   $httpProvider.interceptors.push 'httpRequestInterceptorVendorMimeType'
 ]
-.provider 'httpRequestInterceptorVendorMimeType', ->
+.provider('httpRequestInterceptorVendorMimeType', ->
   @matchList = [/.*api.*/]
   @vendorMimeType = ''
 
@@ -16,7 +16,6 @@ angular.module 'ngVendorMimeType', []
 
     return (
       'request': (config) ->
-
         if vendorMimeType
           matches = false
           for pattern in matchList
@@ -30,3 +29,4 @@ angular.module 'ngVendorMimeType', []
     )
   ]
   return
+)

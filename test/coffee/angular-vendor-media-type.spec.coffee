@@ -40,14 +40,13 @@ describe 'ngVendorMimeType', ->
         $httpBackend.flush()
 
   describe 'With configured provider', ->
-    beforeEach module('ngVendorMimeType')
-#      module((httpRequestInterceptorCacheBusterProvider) ->
-#        httpRequestInterceptorCacheBusterProvider.setVendorMimeType('application/vnd.appname.v1+json')
-#      )
+    beforeEach module 'ngVendorMimeType', (httpRequestInterceptorVendorMimeTypeProvider) ->
+      httpRequestInterceptorVendorMimeTypeProvider.setVendorMimeType('application/vnd.appname.v1+json')
 
-    beforeEach inject ($injector) ->
+    beforeEach inject (($injector) ->
       $httpBackend = $injector.get('$httpBackend')
       $http = $injector.get('$http')
+    )
 
     afterEach ->
       $httpBackend.verifyNoOutstandingExpectation()
@@ -70,7 +69,7 @@ describe 'ngVendorMimeType', ->
       it 'should alter the Accept header', ->
         path = '/api/invoices'
         $httpBackend.expectGET(path, (headers) ->
-          return headers.Accept == 'application/json'
+          return headers.Accept == 'application/vnd.appname.v1+json'
         ).respond(200)
         $http.get(path, (
           headers: (
