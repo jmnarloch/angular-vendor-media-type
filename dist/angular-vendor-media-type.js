@@ -5,10 +5,10 @@
       return $httpProvider.interceptors.push('httpRequestInterceptorVendorMimeType');
     }
   ]).provider('httpRequestInterceptorVendorMimeType', function() {
-    this.matchList = [/.*api.*/];
+    this.matchPaths = [/.*api.*/];
     this.vendorMimeType = '';
     this.setMatchList = function(matchList1) {
-      this.matchList = matchList1;
+      this.matchPaths = matchList1;
     };
     this.setVendorMimeType = function(vendorMimeType1) {
       this.vendorMimeType = vendorMimeType1;
@@ -16,15 +16,15 @@
     this.$get = [
       '$q', function($q) {
         var matchList, vendorMimeType;
-        matchList = this.matchList;
+        matchPaths = this.matchPaths;
         vendorMimeType = this.vendorMimeType;
         return {
           'request': function(config) {
             var i, len, matches, pattern;
             if (vendorMimeType) {
               matches = false;
-              for (i = 0, len = matchList.length; i < len; i++) {
-                pattern = matchList[i];
+              for (i = 0, len = matchPaths.length; i < len; i++) {
+                pattern = matchPaths[i];
                 if (config.url.match(pattern)) {
                   matches = true;
                 }

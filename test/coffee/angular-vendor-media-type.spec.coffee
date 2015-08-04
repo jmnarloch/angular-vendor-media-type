@@ -77,3 +77,55 @@ describe 'ngVendorMimeType', ->
           )
         ))
         $httpBackend.flush()
+
+    describe 'Should match the request url', ->
+      it 'should alter the Accept header', ->
+        path = '/api/invoices'
+        $httpBackend.expectGET(path, (headers) ->
+          return headers.Accept == 'application/vnd.appname.v1+json'
+        ).respond(200)
+        $http.get(path, (
+          headers: (
+            'Accept': 'application/json'
+          )
+        ))
+        $httpBackend.flush()
+
+    describe 'Should match the request url with multiple mimetypes', ->
+      it 'should alter the Accept header', ->
+        path = '/api/invoices'
+        $httpBackend.expectGET(path, (headers) ->
+          return headers.Accept == 'application/vnd.appname.v1+json'
+        ).respond(200)
+        $http.get(path, (
+          headers: (
+            'Accept': '*/*,application/*,application/json'
+          )
+        ))
+        $httpBackend.flush()
+
+    describe 'Should not match the request mime types', ->
+      it 'should not alter the Accept header', ->
+        path = '/api/invoices'
+        $httpBackend.expectGET(path, (headers) ->
+          return headers.Accept == '*/*,text/plain,text/html'
+        ).respond(200)
+        $http.get(path, (
+          headers: (
+            'Accept': '*/*,text/plain,text/html'
+          )
+        ))
+        $httpBackend.flush()
+
+    describe 'Should not match the request empty mime types', ->
+      it 'should not alter the Accept header', ->
+        path = '/api/invoices'
+        $httpBackend.expectGET(path, (headers) ->
+          return headers.Accept == ''
+        ).respond(200)
+        $http.get(path, (
+          headers: (
+            'Accept': ''
+          )
+        ))
+        $httpBackend.flush()
