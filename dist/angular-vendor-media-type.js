@@ -4,24 +4,33 @@
       return $httpProvider.interceptors.push('httpRequestInterceptorVendorMimeType');
     }
   ]).provider('httpRequestInterceptorVendorMimeType', function() {
-    this.paths = [/.*api.*/];
-    this.mimeTypes = ['text/xml', 'application/xml', 'application/json'];
-    this.mimeTypePattern = /([\s\w\d+-\/\\*\\.]+)(:?[\s\w\d+-\/\\*\\.=])?/;
-    this.vendorMimeType = '';
-    this.setPaths = function(paths1) {
-      this.paths = paths1;
-    };
-    this.setMimeTypes = function(mimeTypes1) {
-      this.mimeTypes = mimeTypes1;
-    };
-    this.setMimeTypePattern = function(mimeTypePattern1) {
-      this.mimeTypePattern = mimeTypePattern1;
-    };
-    this.setVendorMimeType = function(vendorMimeType1) {
-      this.vendorMimeType = vendorMimeType1;
-    };
-    this.$get = [
-      '$q', function($q) {
+    var HttpRequestInterceptorVendorMimeTypeProvider;
+    HttpRequestInterceptorVendorMimeTypeProvider = (function() {
+      function HttpRequestInterceptorVendorMimeTypeProvider() {
+        this.paths = [/.*api.*/];
+        this.mimeTypes = ['text/xml', 'application/xml', 'application/json'];
+        this.mimeTypePattern = /([\s\w\d+-\/\/*.]+)(:?;[\s\w\d+-\/\/*.=])?/;
+        this.vendorMimeType = '';
+        this.vendor;
+      }
+
+      HttpRequestInterceptorVendorMimeTypeProvider.prototype.setVendorMimeType = function(vendorMimeType1) {
+        this.vendorMimeType = vendorMimeType1;
+      };
+
+      HttpRequestInterceptorVendorMimeTypeProvider.prototype.matchingRequests = function(paths1) {
+        this.paths = paths1;
+      };
+
+      HttpRequestInterceptorVendorMimeTypeProvider.prototype.matchingMimeTypes = function(mimeTypes1) {
+        this.mimeTypes = mimeTypes1;
+      };
+
+      HttpRequestInterceptorVendorMimeTypeProvider.prototype.withVendor = function(vendor) {
+        this.vendor = vendor;
+      };
+
+      HttpRequestInterceptorVendorMimeTypeProvider.prototype.$get = function($q) {
         var extractMimeTypes, matchesMimeTypes, matchesPath, mimeTypePattern, mimeTypes, paths, vendorMimeType;
         paths = this.paths;
         mimeTypes = this.mimeTypes;
@@ -69,8 +78,12 @@
             return config || $q.when(config);
           }
         };
-      }
-    ];
+      };
+
+      return HttpRequestInterceptorVendorMimeTypeProvider;
+
+    })();
+    return new HttpRequestInterceptorVendorMimeTypeProvider();
   });
 
 }).call(this);
