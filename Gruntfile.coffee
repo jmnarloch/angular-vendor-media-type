@@ -4,11 +4,18 @@ module.exports = (grunt) ->
   require('time-grunt')(grunt);
 
   grunt.initConfig(
+    bower:
+      install:
+        options:
+          verbose: false
+          targetDir: 'bower_components'
+
     clean:
       dist:
         files: [
           src: 'dist/*'
         ]
+
     coffee:
       compile:
         files:
@@ -44,6 +51,7 @@ module.exports = (grunt) ->
 
   grunt.registerTask('test', [
     'coffeelint:test',
+    'bower:install',
     'wiredep:test',
     'karma'
   ]);
