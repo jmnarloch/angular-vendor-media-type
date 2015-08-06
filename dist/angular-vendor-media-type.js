@@ -6,16 +6,30 @@
   ]).provider('httpRequestInterceptorVendorMimeType', function() {
     var AcceptHeaderProcessor, HttpRequestInterceptorVendorMimeTypeProvider, MediaTypeTransformer;
     MediaTypeTransformer = (function() {
-      var MEDIA_TYPE_SEPARATOR, append, toString;
+      var MEDIA_TYPE_PATTERN, MEDIA_TYPE_SEPARATOR, append, toString;
 
       MEDIA_TYPE_SEPARATOR = '.';
+
+      MEDIA_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\.=])*)/;
 
       function MediaTypeTransformer(vendor) {
         this.vendorMimeType = toString(vendor);
       }
 
       MediaTypeTransformer.prototype.transform = function(mediaType) {
-        return this.vendorMimeType;
+        var matches, parameters, result, subtype, type;
+        result = [];
+        matches = MEDIA_TYPE_PATTERN.exec(mediaType);
+        type = matches[1];
+        subtype = matches[2];
+        parameters = matches[3];
+        append(result, type);
+        append(result, '/');
+        append(result, this.vendorMimeType);
+        append(result, '+');
+        append(result, subtype);
+        append(result, parameters);
+        return result.join('');
       };
 
       toString = function(vendor) {
@@ -45,18 +59,24 @@
 
       function AcceptHeaderProcessor(config) {
         this.config = angular.extend({
-          mimeTypePattern: /([\s\w\d+-\/\/*.]+)(:?;[\s\w\d+-\/\/*.=])?/
+          mimeTypePattern: /([\s\w\d+\-\/\*\.]+)((:?;[\s\w\d+\-*\.=])*)/
         }, config);
         this.transformer = new MediaTypeTransformer(this.config.vendor);
       }
 
       AcceptHeaderProcessor.prototype.process = function(header) {
-        var headerMimeTypes;
+        var headerMimeType, headerMimeTypes, i, len, mime, result;
         headerMimeTypes = this.extractMimeTypes(header);
-        if (this.matchesMimeTypes(headerMimeTypes)) {
-          return this.config.vendorMimeType;
+        result = [];
+        for (i = 0, len = headerMimeTypes.length; i < len; i++) {
+          headerMimeType = headerMimeTypes[i];
+          mime = headerMimeType;
+          if (this.matchesMimeTypes(headerMimeType)) {
+            mime = this.transformer.transform(headerMimeType);
+          }
+          result.push(mime);
         }
-        return header;
+        return result.join(SEPARATOR);
       };
 
       AcceptHeaderProcessor.prototype.extractMimeTypes = function(header) {
@@ -72,12 +92,12 @@
         });
       };
 
-      AcceptHeaderProcessor.prototype.matchesMimeTypes = function(headerMimeTypes) {
+      AcceptHeaderProcessor.prototype.matchesMimeTypes = function(headerMimeType) {
         var i, len, mimeType, ref;
         ref = this.config.mimeTypes;
         for (i = 0, len = ref.length; i < len; i++) {
           mimeType = ref[i];
-          if (headerMimeTypes.indexOf(mimeType) > -1) {
+          if (headerMimeType === mimeType) {
             return true;
           }
         }
