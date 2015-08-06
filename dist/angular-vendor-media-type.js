@@ -4,7 +4,40 @@
       return $httpProvider.interceptors.push('httpRequestInterceptorVendorMimeType');
     }
   ]).provider('httpRequestInterceptorVendorMimeType', function() {
-    var AcceptHeaderProcessor, HttpRequestInterceptorVendorMimeTypeProvider;
+    var AcceptHeaderProcessor, HttpRequestInterceptorVendorMimeTypeProvider, MediaTypeTransformer;
+    MediaTypeTransformer = (function() {
+      var MEDIA_TYPE_SEPARATOR, append, toString;
+
+      MEDIA_TYPE_SEPARATOR = '.';
+
+      function MediaTypeTransformer(vendor) {
+        this.vendorMimeType = toString(vendor);
+      }
+
+      MediaTypeTransformer.prototype.transform = function(mediaType) {
+        return this.vendorMimeType;
+      };
+
+      toString = function(vendor) {
+        var parts;
+        parts = [];
+        append(parts, vendor != null ? vendor.name : void 0);
+        append(parts, vendor != null ? vendor.application : void 0);
+        if (vendor != null ? vendor.version : void 0) {
+          parts.push('v' + vendor.version);
+        }
+        return parts.join(MEDIA_TYPE_SEPARATOR);
+      };
+
+      append = function(parts, value) {
+        if (value != null) {
+          return parts.push(value);
+        }
+      };
+
+      return MediaTypeTransformer;
+
+    })();
     AcceptHeaderProcessor = (function() {
       var SEPARATOR;
 
@@ -14,6 +47,7 @@
         this.config = angular.extend({
           mimeTypePattern: /([\s\w\d+-\/\/*.]+)(:?;[\s\w\d+-\/\/*.=])?/
         }, config);
+        this.transformer = new MediaTypeTransformer(this.config.vendor);
       }
 
       AcceptHeaderProcessor.prototype.process = function(header) {

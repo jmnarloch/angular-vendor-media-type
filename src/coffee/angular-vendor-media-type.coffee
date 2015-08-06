@@ -4,22 +4,66 @@ angular.module 'ngVendorMimeType', []
 ]
 .provider('httpRequestInterceptorVendorMimeType', ->
 
+  class MediaTypeTransformer
+
+    MEDIA_TYPE_SEPARATOR = '.'
+    MEDIA_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\.=])*)/
+
+    constructor: (vendor) ->
+      @vendorMimeType = toString(vendor)
+
+    transform: (mediaType) ->
+
+      result = []
+      matches = MEDIA_TYPE_PATTERN.exec mediaType
+      type = matches[1]
+      subtype = matches[2]
+      parameters = matches[3]
+
+      append(result, type)
+      append(result, '/')
+      append(result, @vendorMimeType)
+      append(result, '+')
+      append(result, subtype)
+      append(result, parameters)
+
+      result.join('')
+
+    toString = (vendor) ->
+      parts = []
+      append(parts, vendor?.name)
+      append(parts, vendor?.application)
+      if vendor?.version
+        parts.push('v' + vendor.version)
+
+      parts.join(MEDIA_TYPE_SEPARATOR)
+
+    append = (parts, value) ->
+      if value?
+        parts.push(value)
+
   class AcceptHeaderProcessor
 
     SEPARATOR = ','
 
     constructor: (config) ->
       @config = angular.extend((
-        mimeTypePattern: /([\s\w\d+-//*.]+)(:?;[\s\w\d+-//*.=])?/,
+        mimeTypePattern: /([\s\w\d+\-\/\*\.]+)((:?;[\s\w\d+\-*\.=])*)/
       ), config)
+      @transformer = new MediaTypeTransformer(@config.vendor)
 
     process: (header) ->
       headerMimeTypes = @extractMimeTypes(header)
 
-      if @matchesMimeTypes(headerMimeTypes)
-        return @config.vendorMimeType
+      result = []
+      for headerMimeType in headerMimeTypes
+        mime = headerMimeType
+        if @matchesMimeTypes(headerMimeType)
+          mime = @transformer.transform(headerMimeType)
 
-      return header
+        result.push(mime)
+
+      return result.join(SEPARATOR)
 
     extractMimeTypes: (header) ->
       mimeTypePattern = @config.mimeTypePattern
@@ -32,9 +76,9 @@ angular.module 'ngVendorMimeType', []
         return match[1].trim()
       )
 
-    matchesMimeTypes: (headerMimeTypes) ->
+    matchesMimeTypes: (headerMimeType) ->
       for mimeType in @config.mimeTypes
-        if headerMimeTypes.indexOf(mimeType) > -1
+        if headerMimeType == mimeType
           return true
       return false
 

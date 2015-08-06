@@ -48,7 +48,7 @@ describe 'ngVendorMimeType', ->
       httpRequestInterceptorVendorMimeTypeProvider.withVendor(
         name: 'vnd',
         application: 'appname',
-        version: 'v1'
+        version: 1
       )
 
     beforeEach inject (($injector) ->
@@ -103,7 +103,7 @@ describe 'ngVendorMimeType', ->
       it 'should alter the Accept header', ->
         path = '/api/invoices'
         $httpBackend.expectGET(path, (headers) ->
-          return headers.Accept == 'application/vnd.appname.v1+json'
+          return headers.Accept == '*/*,application/*,application/vnd.appname.v1+json'
         ).respond(200)
         $http.get(path, (
           headers: (
