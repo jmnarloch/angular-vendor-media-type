@@ -41,7 +41,6 @@ describe 'ngVendorMimeType', ->
 
   describe 'With configured provider', ->
     beforeEach module 'ngVendorMimeType', (httpRequestInterceptorVendorMimeTypeProvider) ->
-      httpRequestInterceptorVendorMimeTypeProvider.setVendorMimeType('application/vnd.appname.v1+json')
       httpRequestInterceptorVendorMimeTypeProvider.matchingRequests([/.*api.*/])
       httpRequestInterceptorVendorMimeTypeProvider.matchingMimeTypes(['text/xml', 'application/xml',
                                                                       'application/json'])
