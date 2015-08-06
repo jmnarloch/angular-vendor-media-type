@@ -47,8 +47,10 @@ describe 'ngVendorMimeType', ->
       httpRequestInterceptorVendorMimeTypeProvider.withVendor(
         name: 'vnd',
         application: 'appname',
-        version: 1
+        version: '1'
       )
+      httpRequestInterceptorVendorMimeTypeProvider.withoutVersionParam()
+      return
 
     beforeEach inject (($injector) ->
       $httpBackend = $injector.get('$httpBackend')
@@ -111,6 +113,19 @@ describe 'ngVendorMimeType', ->
         ))
         $httpBackend.flush()
 
+    describe 'Should match the request url with multiple mimetypes and quality', ->
+      it 'should alter the Accept header', ->
+        path = '/api/invoices'
+        $httpBackend.expectGET(path, (headers) ->
+          return headers.Accept == 'application/vnd.appname.v1+json; q=0.8,application/vnd.appname.v1+xml; q=0.6'
+        ).respond(200)
+        $http.get(path, (
+          headers: (
+            'Accept': 'application/json; q=0.8,application/xml; q=0.6'
+          )
+        ))
+        $httpBackend.flush()
+
     describe 'Should not match the request mime types', ->
       it 'should not alter the Accept header', ->
         path = '/api/invoices'
@@ -133,6 +148,41 @@ describe 'ngVendorMimeType', ->
         $http.get(path, (
           headers: (
             'Accept': ''
+          )
+        ))
+        $httpBackend.flush()
+
+  describe 'With configured provider', ->
+    beforeEach module 'ngVendorMimeType', (httpRequestInterceptorVendorMimeTypeProvider) ->
+      httpRequestInterceptorVendorMimeTypeProvider.matchingRequests([/.*/])
+      httpRequestInterceptorVendorMimeTypeProvider.matchingMimeTypes(['text/xml', 'application/xml',
+                                                                      'application/json'])
+      httpRequestInterceptorVendorMimeTypeProvider.withVendor(
+        name: 'vnd',
+        application: 'appname',
+        version: '1'
+      )
+      httpRequestInterceptorVendorMimeTypeProvider.withVersionParam()
+      return
+
+    beforeEach inject (($injector) ->
+      $httpBackend = $injector.get('$httpBackend')
+      $http = $injector.get('$http')
+    )
+
+    afterEach ->
+      $httpBackend.verifyNoOutstandingExpectation()
+      $httpBackend.verifyNoOutstandingRequest()
+
+    describe 'Should match the request url', ->
+      it 'should alter the Accept header with version parameter', ->
+        path = '/api/invoices'
+        $httpBackend.expectGET(path, (headers) ->
+          return headers.Accept == 'application/vnd.appname+json; version=1'
+        ).respond(200)
+        $http.get(path, (
+          headers: (
+            'Accept': 'application/json'
           )
         ))
         $httpBackend.flush()

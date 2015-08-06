@@ -6,41 +6,45 @@
   ]).provider('httpRequestInterceptorVendorMimeType', function() {
     var AcceptHeaderProcessor, HttpRequestInterceptorVendorMimeTypeProvider, MediaTypeTransformer;
     MediaTypeTransformer = (function() {
-      var MEDIA_TYPE_PATTERN, MEDIA_TYPE_SEPARATOR, append, toString;
+      var MIME_TYPE_PATTERN, MIME_TYPE_SEPARATOR, append, toString;
 
-      MEDIA_TYPE_SEPARATOR = '.';
+      MIME_TYPE_SEPARATOR = '.';
 
-      MEDIA_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\.=])*)/;
+      MIME_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\."=]*)*)/;
 
-      function MediaTypeTransformer(vendor) {
-        this.vendorMimeType = toString(vendor);
+      function MediaTypeTransformer(vendor, useVersionParam) {
+        this.vendor = vendor;
+        this.useVersionParam = useVersionParam;
+        this.vendorMimeType = toString(vendor, useVersionParam);
       }
 
       MediaTypeTransformer.prototype.transform = function(mediaType) {
-        var matches, parameters, result, subtype, type;
+        var matches, parameters, ref, ref1, result, subtype, type;
+        matches = MIME_TYPE_PATTERN.exec(mediaType);
+        ref = matches.slice(1, 4), type = ref[0], subtype = ref[1], parameters = ref[2];
         result = [];
-        matches = MEDIA_TYPE_PATTERN.exec(mediaType);
-        type = matches[1];
-        subtype = matches[2];
-        parameters = matches[3];
         append(result, type);
         append(result, '/');
         append(result, this.vendorMimeType);
         append(result, '+');
         append(result, subtype);
         append(result, parameters);
+        if (this.useVersionParam === true && (((ref1 = this.vendor) != null ? ref1.version : void 0) != null)) {
+          append(result, '; version=');
+          append(result, this.vendor.version);
+        }
         return result.join('');
       };
 
-      toString = function(vendor) {
+      toString = function(vendor, useVersionParam) {
         var parts;
         parts = [];
         append(parts, vendor != null ? vendor.name : void 0);
         append(parts, vendor != null ? vendor.application : void 0);
-        if (vendor != null ? vendor.version : void 0) {
+        if (useVersionParam === false && ((vendor != null ? vendor.version : void 0) != null)) {
           parts.push('v' + vendor.version);
         }
-        return parts.join(MEDIA_TYPE_SEPARATOR);
+        return parts.join(MIME_TYPE_SEPARATOR);
       };
 
       append = function(parts, value) {
@@ -61,11 +65,14 @@
         this.config = angular.extend({
           mimeTypePattern: /([\s\w\d+\-\/\*\.]+)((:?;[\s\w\d+\-*\.=])*)/
         }, config);
-        this.transformer = new MediaTypeTransformer(this.config.vendor);
+        this.transformer = new MediaTypeTransformer(this.config.vendor, config.useVersionParam);
       }
 
       AcceptHeaderProcessor.prototype.process = function(header) {
         var headerMimeType, headerMimeTypes, i, len, mime, result;
+        if (header == null) {
+          return header;
+        }
         headerMimeTypes = this.extractMimeTypes(header);
         result = [];
         for (i = 0, len = headerMimeTypes.length; i < len; i++) {
@@ -80,24 +87,21 @@
       };
 
       AcceptHeaderProcessor.prototype.extractMimeTypes = function(header) {
-        var mimeTypePattern;
-        mimeTypePattern = this.config.mimeTypePattern;
-        return header.split(SEPARATOR).map(function(mime) {
-          var match;
-          if (!mimeTypePattern.test(mime)) {
-            return mime;
-          }
-          match = mimeTypePattern.exec(mime);
-          return match[1].trim();
-        });
+        return header.split(SEPARATOR);
       };
 
       AcceptHeaderProcessor.prototype.matchesMimeTypes = function(headerMimeType) {
-        var i, len, mimeType, ref;
+        var i, len, match, mimeType, mimeTypePattern, ref, type;
+        mimeTypePattern = this.config.mimeTypePattern;
+        if (!mimeTypePattern.test(headerMimeType)) {
+          return false;
+        }
+        match = mimeTypePattern.exec(headerMimeType);
+        type = match[1].trim();
         ref = this.config.mimeTypes;
         for (i = 0, len = ref.length; i < len; i++) {
           mimeType = ref[i];
-          if (headerMimeType === mimeType) {
+          if (mimeType === type) {
             return true;
           }
         }
@@ -111,6 +115,7 @@
       function HttpRequestInterceptorVendorMimeTypeProvider(paths, mimeTypes) {
         this.paths = paths;
         this.mimeTypes = mimeTypes;
+        this.useVersionParam = false;
       }
 
       HttpRequestInterceptorVendorMimeTypeProvider.prototype.matchingRequests = function(paths1) {
@@ -125,14 +130,24 @@
         this.vendor = vendor1;
       };
 
+      HttpRequestInterceptorVendorMimeTypeProvider.prototype.withVersionParam = function() {
+        return this.useVersionParam = true;
+      };
+
+      HttpRequestInterceptorVendorMimeTypeProvider.prototype.withoutVersionParam = function() {
+        return this.useVersionParam = false;
+      };
+
       HttpRequestInterceptorVendorMimeTypeProvider.prototype.$get = function($q) {
-        var matchesPath, mimeTypes, paths, processor, vendor;
+        var matchesPath, mimeTypes, paths, processor, useVersionParam, vendor;
         paths = this.paths;
         mimeTypes = this.mimeTypes;
         vendor = this.vendor;
+        useVersionParam = this.useVersionParam;
         processor = new AcceptHeaderProcessor({
           mimeTypes: mimeTypes,
-          vendor: vendor
+          vendor: vendor,
+          useVersionParam: useVersionParam
         });
         matchesPath = function(url) {
           var i, len, path;
@@ -146,10 +161,9 @@
         };
         return {
           'request': function(config) {
-            var value;
             if (angular.isDefined(vendor && matchesPath(config.url))) {
-              value = processor.process(config.headers.Accept);
-              config.headers.Accept = value;
+              config.headers.Accept = processor.process(config.headers.Accept);
+              config.headers['Content-Type'] = processor.process(config.headers['Content-Type']);
             }
             return config || $q.when(config);
           }

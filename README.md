@@ -1,6 +1,6 @@
 # Angular Vendor Media Type [![Build Status](https://travis-ci.org/jmnarloch/angular-vendor-media-type.svg?branch=master)](https://travis-ci.org/jmnarloch/angular-vendor-media-type)
 
-> Angular http interceptor that sets you vendor specific versioned media type
+> Angular $http interceptor that sets you vendor specific versioned media type
 
 ## Setup
 
@@ -37,7 +37,7 @@ angular.module('app', ['ngVendorMimeType'])
 
 ## How it works
 
-The extension intercept any outgoing $http request and *transforms* the `Accept` header MIME types. 
+The extension intercept any outgoing $http request and *transforms* the `Accept` and `Content-Type` headers MIME types. 
 If your application make fallowing request:
   
 ```
@@ -54,6 +54,35 @@ Accept: */*,application/vnd.appname.v1+json
 
 Note: only the configured MIME types will be altered, you can use the 
 `httpRequestInterceptorVendorMimeTypeProvider.matchingMimeTypes` method for specifying the desired ones.
+
+## Options
+
+`httpRequestInterceptorVendorMimeTypeProvider` defines a set of methods for configuring its behaviour
+
+### matchingRequests
+Default value: [\.*\]
+
+Defines the list of request url regexes
+
+### matchingMimeTypes
+Default value: ['text/xml', 'application/xml', 'application/json']
+
+Defines the list of MIME types to modify
+
+### withVendor
+Default value: null
+
+Defines the vendor information
+
+### withVersionParam
+Default value: false
+
+Allows to pass the version as additional MIME type parameter i.e.: `application/vnd.appname+json; version=1`
+
+### withoutVersionParam
+Default value: false
+
+Disables passing the MIME version parameter
 
 ## License
 

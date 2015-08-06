@@ -6,20 +6,19 @@ angular.module 'ngVendorMimeType', []
 
   class MediaTypeTransformer
 
-    MEDIA_TYPE_SEPARATOR = '.'
-    MEDIA_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\.=])*)/
+    MIME_TYPE_SEPARATOR = '.'
+    MIME_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\."=]*)*)/
 
-    constructor: (vendor) ->
-      @vendorMimeType = toString vendor
+    constructor: (vendor, useVersionParam) ->
+      @vendor = vendor
+      @useVersionParam = useVersionParam
+      @vendorMimeType = toString(vendor, useVersionParam)
 
     transform: (mediaType) ->
 
+      matches = MIME_TYPE_PATTERN.exec mediaType
+      [type, subtype, parameters] = matches[1..3]
       result = []
-      matches = MEDIA_TYPE_PATTERN.exec mediaType
-      type = matches[1]
-      subtype = matches[2]
-      parameters = matches[3]
-
       append result, type
       append result, '/'
       append result, @vendorMimeType
@@ -27,16 +26,20 @@ angular.module 'ngVendorMimeType', []
       append result, subtype
       append result, parameters
 
+      if @useVersionParam is true and @vendor?.version?
+        append result, '; version='
+        append result, @vendor.version
+
       result.join('')
 
-    toString = (vendor) ->
+    toString = (vendor, useVersionParam) ->
       parts = []
       append parts, vendor?.name
       append parts, vendor?.application
-      if vendor?.version
+      if useVersionParam is false and vendor?.version?
         parts.push 'v' + vendor.version
 
-      parts.join MEDIA_TYPE_SEPARATOR
+      parts.join MIME_TYPE_SEPARATOR
 
     append = (parts, value) ->
       if value?
@@ -50,9 +53,14 @@ angular.module 'ngVendorMimeType', []
       @config = angular.extend((
         mimeTypePattern: /([\s\w\d+\-\/\*\.]+)((:?;[\s\w\d+\-*\.=])*)/
       ), config)
-      @transformer = new MediaTypeTransformer(@config.vendor)
+      @transformer = new MediaTypeTransformer(@config.vendor,
+        config.useVersionParam
+      )
 
     process: (header) ->
+      if not header?
+        return header
+
       headerMimeTypes = @extractMimeTypes header
 
       result = []
@@ -66,19 +74,18 @@ angular.module 'ngVendorMimeType', []
       return result.join SEPARATOR
 
     extractMimeTypes: (header) ->
-      mimeTypePattern = @config.mimeTypePattern
-
-      return header.split(SEPARATOR).map((mime) ->
-        if not mimeTypePattern.test mime
-          return mime
-
-        match = mimeTypePattern.exec mime
-        return match[1].trim()
-      )
+      return header.split(SEPARATOR)
 
     matchesMimeTypes: (headerMimeType) ->
+      mimeTypePattern = @config.mimeTypePattern
+      if not mimeTypePattern.test headerMimeType
+        return false
+
+      match = mimeTypePattern.exec headerMimeType
+      type = match[1].trim()
+
       for mimeType in @config.mimeTypes
-        if headerMimeType == mimeType
+        if mimeType == type
           return true
       return false
 
@@ -87,19 +94,24 @@ angular.module 'ngVendorMimeType', []
     constructor: (paths, mimeTypes) ->
       @paths = paths
       @mimeTypes = mimeTypes
+      @useVersionParam = false
 
     matchingRequests: (@paths) ->
     matchingMimeTypes: (@mimeTypes) ->
     withVendor: (@vendor) ->
+    withVersionParam: () -> @useVersionParam = true
+    withoutVersionParam: () -> @useVersionParam = false
 
     $get: ($q) ->
       paths = @paths
       mimeTypes = @mimeTypes
       vendor = @vendor
+      useVersionParam = @useVersionParam
 
       processor = new AcceptHeaderProcessor(
         mimeTypes: mimeTypes
         vendor: vendor
+        useVersionParam: useVersionParam
       )
 
       matchesPath = (url) ->
@@ -113,8 +125,8 @@ angular.module 'ngVendorMimeType', []
         'request': (config) ->
           if angular.isDefined vendor and matchesPath config.url
 
-            value = processor.process config.headers.Accept
-            config.headers.Accept = value
+            config.headers.Accept = processor.process config.headers.Accept
+            config.headers['Content-Type'] = processor.process config.headers['Content-Type']
 
           return config or $q.when(config)
       )
