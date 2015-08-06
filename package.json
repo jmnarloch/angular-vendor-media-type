@@ -1,6 +1,6 @@
 {
   "name": "angular-vendor-media-type",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "A simple AngularJS plugin for seting up the vendor specific media type for every $http request",
   "main": "dist/angular-vendor-media-type.js",
   "scripts": {
