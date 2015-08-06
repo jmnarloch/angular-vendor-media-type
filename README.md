@@ -60,27 +60,27 @@ Note: only the configured MIME types will be altered, you can use the
 `httpRequestInterceptorVendorMimeTypeProvider` defines a set of methods for configuring its behaviour
 
 ### matchingRequests
-Default value: [\.*\]
+Default value: `[\.*\]`
 
 Defines the list of request url regexes
 
 ### matchingMimeTypes
-Default value: ['text/xml', 'application/xml', 'application/json']
+Default value: `['text/xml', 'application/xml', 'application/json']`
 
 Defines the list of MIME types to modify
 
 ### withVendor
-Default value: null
+Default value: `null`
 
 Defines the vendor information
 
 ### withVersionParam
-Default value: false
+Default value: `false`
 
 Allows to pass the version as additional MIME type parameter i.e.: `application/vnd.appname+json; version=1`
 
 ### withoutVersionParam
-Default value: false
+Default value: `false`
 
 Disables passing the MIME version parameter
 
