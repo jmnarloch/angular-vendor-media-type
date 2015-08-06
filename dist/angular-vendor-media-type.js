@@ -113,10 +113,6 @@
         this.mimeTypes = mimeTypes;
       }
 
-      HttpRequestInterceptorVendorMimeTypeProvider.prototype.setVendorMimeType = function(vendorMimeType1) {
-        this.vendorMimeType = vendorMimeType1;
-      };
-
       HttpRequestInterceptorVendorMimeTypeProvider.prototype.matchingRequests = function(paths1) {
         this.paths = paths1;
       };
@@ -130,14 +126,12 @@
       };
 
       HttpRequestInterceptorVendorMimeTypeProvider.prototype.$get = function($q) {
-        var matchesPath, mimeTypes, paths, processor, vendor, vendorMimeType;
+        var matchesPath, mimeTypes, paths, processor, vendor;
         paths = this.paths;
         mimeTypes = this.mimeTypes;
-        vendorMimeType = this.vendorMimeType;
         vendor = this.vendor;
         processor = new AcceptHeaderProcessor({
           mimeTypes: mimeTypes,
-          vendorMimeType: vendorMimeType,
           vendor: vendor
         });
         matchesPath = function(url) {
@@ -153,7 +147,7 @@
         return {
           'request': function(config) {
             var value;
-            if ((vendorMimeType || angular.isDefined(vendor)) && matchesPath(config.url)) {
+            if (angular.isDefined(vendor && matchesPath(config.url))) {
               value = processor.process(config.headers.Accept);
               config.headers.Accept = value;
             }
