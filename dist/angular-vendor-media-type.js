@@ -120,22 +120,27 @@
 
       HttpRequestInterceptorVendorMimeTypeProvider.prototype.matchingRequests = function(paths1) {
         this.paths = paths1;
+        return this;
       };
 
       HttpRequestInterceptorVendorMimeTypeProvider.prototype.matchingMimeTypes = function(mimeTypes1) {
         this.mimeTypes = mimeTypes1;
+        return this;
       };
 
       HttpRequestInterceptorVendorMimeTypeProvider.prototype.withVendor = function(vendor1) {
         this.vendor = vendor1;
+        return this;
       };
 
       HttpRequestInterceptorVendorMimeTypeProvider.prototype.withVersionParam = function() {
-        return this.useVersionParam = true;
+        this.useVersionParam = true;
+        return this;
       };
 
       HttpRequestInterceptorVendorMimeTypeProvider.prototype.withoutVersionParam = function() {
-        return this.useVersionParam = false;
+        this.useVersionParam = false;
+        return this;
       };
 
       HttpRequestInterceptorVendorMimeTypeProvider.prototype.$get = function($q) {

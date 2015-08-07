@@ -19,19 +19,19 @@ angular.module('app', ['ngVendorMimeType'])
 ## Configure
 
 Optionally configure the `httpRequestInterceptorVendorMimeTypeProvider` by setting the matched request urls,
-mime types and the vendor information:
+mime types and the vendor information using fluent API:
 
 ```
 angular.module('app', ['ngVendorMimeType'])
 .config(function(httpRequestInterceptorVendorMimeTypeProvider) {
-      httpRequestInterceptorVendorMimeTypeProvider.matchingRequests([/.*api.*/]);
-      httpRequestInterceptorVendorMimeTypeProvider.matchingMimeTypes(['text/xml', 'application/xml',
-                                                                      'application/json']);
-      httpRequestInterceptorVendorMimeTypeProvider.withVendor({
-        name: 'vnd',
-        application: 'appname',
-        version: 1
-      });
+    httpRequestInterceptorVendorMimeTypeProvider
+        .matchingRequests([/.*api.*/])
+        .matchingMimeTypes(['text/xml', 'application/xml', 'application/json'])
+        .withVendor({
+          name: 'vnd',
+          application: 'appname',
+          version: '1'
+        });
 });
 ```
 

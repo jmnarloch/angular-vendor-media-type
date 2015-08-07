@@ -96,11 +96,15 @@ angular.module 'ngVendorMimeType', []
       @mimeTypes = mimeTypes
       @useVersionParam = false
 
-    matchingRequests: (@paths) ->
-    matchingMimeTypes: (@mimeTypes) ->
-    withVendor: (@vendor) ->
-    withVersionParam: () -> @useVersionParam = true
-    withoutVersionParam: () -> @useVersionParam = false
+    matchingRequests: (@paths) -> @
+    matchingMimeTypes: (@mimeTypes) -> @
+    withVendor: (@vendor) -> @
+    withVersionParam: () ->
+      @useVersionParam = true
+      @
+    withoutVersionParam: () ->
+      @useVersionParam = false
+      @
 
     $get: ($q) ->
       paths = @paths

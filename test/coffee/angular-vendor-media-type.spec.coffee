@@ -41,15 +41,15 @@ describe 'ngVendorMimeType', ->
 
   describe 'With configured provider', ->
     beforeEach module 'ngVendorMimeType', (httpRequestInterceptorVendorMimeTypeProvider) ->
-      httpRequestInterceptorVendorMimeTypeProvider.matchingRequests([/.*api.*/])
-      httpRequestInterceptorVendorMimeTypeProvider.matchingMimeTypes(['text/xml', 'application/xml',
-                                                                      'application/json'])
-      httpRequestInterceptorVendorMimeTypeProvider.withVendor(
-        name: 'vnd',
-        application: 'appname',
-        version: '1'
-      )
-      httpRequestInterceptorVendorMimeTypeProvider.withoutVersionParam()
+      httpRequestInterceptorVendorMimeTypeProvider
+          .matchingRequests([/.*api.*/])
+          .matchingMimeTypes(['text/xml', 'application/xml', 'application/json'])
+          .withVendor(
+            name: 'vnd',
+            application: 'appname',
+            version: '1'
+          )
+          .withoutVersionParam()
       return
 
     beforeEach inject (($injector) ->
@@ -154,15 +154,15 @@ describe 'ngVendorMimeType', ->
 
   describe 'With configured provider', ->
     beforeEach module 'ngVendorMimeType', (httpRequestInterceptorVendorMimeTypeProvider) ->
-      httpRequestInterceptorVendorMimeTypeProvider.matchingRequests([/.*/])
-      httpRequestInterceptorVendorMimeTypeProvider.matchingMimeTypes(['text/xml', 'application/xml',
-                                                                      'application/json'])
-      httpRequestInterceptorVendorMimeTypeProvider.withVendor(
-        name: 'vnd',
-        application: 'appname',
-        version: '1'
-      )
-      httpRequestInterceptorVendorMimeTypeProvider.withVersionParam()
+      httpRequestInterceptorVendorMimeTypeProvider
+          .matchingRequests([/.*/])
+          .matchingMimeTypes(['text/xml', 'application/xml', 'application/json'])
+          .withVendor(
+            name: 'vnd',
+            application: 'appname',
+            version: '1'
+          )
+          .withVersionParam()
       return
 
     beforeEach inject (($injector) ->
