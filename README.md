@@ -27,11 +27,11 @@ angular.module('app', ['ngVendorMimeType'])
       httpRequestInterceptorVendorMimeTypeProvider.matchingRequests([/.*api.*/]);
       httpRequestInterceptorVendorMimeTypeProvider.matchingMimeTypes(['text/xml', 'application/xml',
                                                                       'application/json']);
-      httpRequestInterceptorVendorMimeTypeProvider.withVendor(
+      httpRequestInterceptorVendorMimeTypeProvider.withVendor({
         name: 'vnd',
         application: 'appname',
         version: 1
-      );
+      });
 });
 ```
 
