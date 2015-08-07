@@ -33,11 +33,11 @@ module.exports = (grunt) ->
 
     wiredep: 
       test: 
-        src: 'karma.conf.js',
+        src: 'karma.conf.coffee',
         devDependencies: true,
         fileTypes: 
-          js: 
-            block: /(([\s\t]*)\/\/\s*bower:*(\S*))(\n|\r|.)*?(\/\/\s*endbower)/gi,
+          coffee:
+            block: /(([\s\t]*)#\s*bower:*(\S*))(\n|\r|.)*?(#\s*endbower)/gi,
             detect: 
               js: /'(.*\.js)'/gi
             replace: 
@@ -45,7 +45,7 @@ module.exports = (grunt) ->
 
     karma: 
       unit: 
-        configFile: 'karma.conf.js',
+        configFile: 'karma.conf.coffee',
         singleRun: true
   )
 
