@@ -47,13 +47,22 @@ module.exports = (grunt) ->
       unit: 
         configFile: 'karma.conf.coffee',
         singleRun: true
+
+    coveralls: {
+      options: {
+        coverageDir: 'coverage',
+        force: true,
+        recursive: true
+      }
+    }
   )
 
   grunt.registerTask('test', [
     'coffeelint:test',
     'bower:install',
     'wiredep:test',
-    'karma'
+    'karma',
+    'coveralls'
   ]);
 
   grunt.registerTask('build', [

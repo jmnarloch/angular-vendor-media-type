@@ -37,8 +37,8 @@ angular.module('app', ['ngVendorMimeType'])
 
 ## How it works
 
-The extension intercept any outgoing $http request and *transforms* the `Accept` and `Content-Type` headers MIME types. 
-If your application make fallowing request:
+The extension intercepts any outgoing $http request and *transforms* the `Accept` and `Content-Type` headers MIME types. 
+If your application makes fallowing request:
   
 ```
 GET /devices
