@@ -4,7 +4,7 @@ angular.module 'ngVendorMimeType', []
 ]
 .provider('httpRequestInterceptorVendorMimeType', ->
 
-  class MediaTypeTransformer
+  class MimeTypeTransformer
 
     MIME_TYPE_SEPARATOR = '.'
     MIME_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\."=]*)*)/
@@ -14,9 +14,9 @@ angular.module 'ngVendorMimeType', []
       @useVersionParam = useVersionParam
       @vendorMimeType = toString(vendor, useVersionParam)
 
-    transform: (mediaType) ->
+    transform: (mimeType) ->
 
-      matches = MIME_TYPE_PATTERN.exec mediaType
+      matches = MIME_TYPE_PATTERN.exec mimeType
       [type, subtype, parameters] = matches[1..3]
       result = []
       append result, type
@@ -53,7 +53,7 @@ angular.module 'ngVendorMimeType', []
       @config = angular.extend((
         mimeTypePattern: /([\s\w\d+\-\/\*\.]+)((:?;[\s\w\d+\-*\.=])*)/
       ), config)
-      @transformer = new MediaTypeTransformer(@config.vendor,
+      @transformer = new MimeTypeTransformer(@config.vendor,
         config.useVersionParam
       )
 

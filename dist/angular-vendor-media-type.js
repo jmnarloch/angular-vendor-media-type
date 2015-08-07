@@ -4,23 +4,23 @@
       return $httpProvider.interceptors.push('httpRequestInterceptorVendorMimeType');
     }
   ]).provider('httpRequestInterceptorVendorMimeType', function() {
-    var AcceptHeaderProcessor, HttpRequestInterceptorVendorMimeTypeProvider, MediaTypeTransformer;
-    MediaTypeTransformer = (function() {
+    var AcceptHeaderProcessor, HttpRequestInterceptorVendorMimeTypeProvider, MimeTypeTransformer;
+    MimeTypeTransformer = (function() {
       var MIME_TYPE_PATTERN, MIME_TYPE_SEPARATOR, append, toString;
 
       MIME_TYPE_SEPARATOR = '.';
 
       MIME_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\."=]*)*)/;
 
-      function MediaTypeTransformer(vendor, useVersionParam) {
+      function MimeTypeTransformer(vendor, useVersionParam) {
         this.vendor = vendor;
         this.useVersionParam = useVersionParam;
         this.vendorMimeType = toString(vendor, useVersionParam);
       }
 
-      MediaTypeTransformer.prototype.transform = function(mediaType) {
+      MimeTypeTransformer.prototype.transform = function(mimeType) {
         var matches, parameters, ref, ref1, result, subtype, type;
-        matches = MIME_TYPE_PATTERN.exec(mediaType);
+        matches = MIME_TYPE_PATTERN.exec(mimeType);
         ref = matches.slice(1, 4), type = ref[0], subtype = ref[1], parameters = ref[2];
         result = [];
         append(result, type);
@@ -53,7 +53,7 @@
         }
       };
 
-      return MediaTypeTransformer;
+      return MimeTypeTransformer;
 
     })();
     AcceptHeaderProcessor = (function() {
@@ -65,7 +65,7 @@
         this.config = angular.extend({
           mimeTypePattern: /([\s\w\d+\-\/\*\.]+)((:?;[\s\w\d+\-*\.=])*)/
         }, config);
-        this.transformer = new MediaTypeTransformer(this.config.vendor, config.useVersionParam);
+        this.transformer = new MimeTypeTransformer(this.config.vendor, config.useVersionParam);
       }
 
       AcceptHeaderProcessor.prototype.process = function(header) {
