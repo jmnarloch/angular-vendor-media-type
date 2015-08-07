@@ -5,6 +5,7 @@
   "main": "dist/angular-vendor-media-type.js",
   "scripts": {
     "build": "grunt",
+    "install": "grunt",
     "test": "grunt test"
   },
   "repository": {
