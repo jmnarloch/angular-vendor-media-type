@@ -1,22 +1,22 @@
-angular.module 'ngVendorMimeType', []
+angular.module 'ngVendorMediaType', []
 .config ['$httpProvider', ($httpProvider) ->
-  $httpProvider.interceptors.push 'httpRequestInterceptorVendorMimeType'
+  $httpProvider.interceptors.push 'httpRequestInterceptorVendorMediaType'
 ]
-.provider('httpRequestInterceptorVendorMimeType', ->
+.provider('httpRequestInterceptorVendorMediaType', ->
 
-  parseMimeTypes = (parser, mimeTypes) ->
-    mimes = []
-    if mimeTypes? and mimeTypes.length > 0
-      for mimeType in mimeTypes
-        mimes.push(parser.parse(mimeType))
+  parseMediaTypes = (parser, mediaTypes) ->
+    types = []
+    if mediaTypes? and mediaTypes.length > 0
+      for mediaType in mediaTypes
+        types.push(parser.parse(mediaType))
 
-    mimes
+    types
 
   append = (parts, value) ->
     if value?
       parts.push value
 
-  class MimeType
+  class MediaType
 
     constructor: (@type, @subtype, @parameters) ->
 
@@ -32,35 +32,35 @@ angular.module 'ngVendorMimeType', []
       return other.type.trim() == @type.trim() and
           other.subtype.trim() == @subtype.trim()
 
-  class MimeTypeParser
+  class MediaTypeParser
 
     constructor: (@pattern) ->
 
-    parse: (mimeType) ->
+    parse: (mediaType) ->
 
-      matches = @pattern.exec mimeType
+      matches = @pattern.exec mediaType
       [type, subtype, parameters] = matches[1..3]
 
-      new MimeType(type, subtype, parameters)
+      new MediaType(type, subtype, parameters)
 
-  class MimeTypeTransformer
+  class MediaTypeTransformer
 
-    MIME_TYPE_SEPARATOR = '.'
+    MEDIA_TYPE_SEPARATOR = '.'
 
     constructor: (@vendor, @useVersionParam) ->
 
-    transform: (mimeType) ->
+    transform: (mediaType) ->
 
-      [subtype, parameters] = [mimeType.subtype, mimeType.parameters]
-      mimeType.subtype = toVendorString(@vendor, @useVersionParam) + '+' + subtype
+      [subtype, parameters] = [mediaType.subtype, mediaType.parameters]
+      mediaType.subtype = toVendorString(@vendor, @useVersionParam) + '+' + subtype
 
       if @useVersionParam is true and @vendor?.version?
         params = []
         append params, '; version='
         append params, @vendor.version
-        mimeType.parameters += params.join('')
+        mediaType.parameters += params.join('')
 
-      mimeType
+      mediaType
 
     toVendorString = (vendor, useVersionParam) ->
       parts = []
@@ -69,7 +69,7 @@ angular.module 'ngVendorMimeType', []
       if useVersionParam is false and vendor?.version?
         parts.push 'v' + vendor.version
 
-      parts.join MIME_TYPE_SEPARATOR
+      parts.join MEDIA_TYPE_SEPARATOR
 
   class HeaderProcessor
 
@@ -78,41 +78,41 @@ angular.module 'ngVendorMimeType', []
     constructor: (parser, config) ->
       @parser = parser
       @config = config
-      @transformer = new MimeTypeTransformer(config.vendor, config.useVersionParam)
+      @transformer = new MediaTypeTransformer(config.vendor, config.useVersionParam)
 
     process: (header) ->
       unless header? and header
         return header
 
-      headerMimeTypes = @extractMimeTypes header
+      headerMediaTypes = @extractMediaTypes header
 
       result = []
-      for headerMimeType in headerMimeTypes
-        mime = headerMimeType
-        if @matchesMimeTypes headerMimeType
-          mime = @transformer.transform headerMimeType
+      for headerMediaType in headerMediaTypes
+        mediaType = headerMediaType
+        if @matchesMediaTypes headerMediaType
+          mediaType = @transformer.transform headerMediaType
 
-        result.push mime.toString()
+        result.push mediaType.toString()
 
       return result.join SEPARATOR
 
-    extractMimeTypes: (header) ->
-      return parseMimeTypes(@parser, header.split(SEPARATOR))
+    extractMediaTypes: (header) ->
+      return parseMediaTypes(@parser, header.split(SEPARATOR))
 
-    matchesMimeTypes: (headerMimeType) ->
-      for mimeType in @config.mimeTypes
-        if mimeType.equal(headerMimeType)
+    matchesMediaTypes: (headerMediaType) ->
+      for mediaType in @config.mediaTypes
+        if mediaType.equal(headerMediaType)
           return true
       return false
 
-  class HttpRequestInterceptorVendorMimeTypeProvider
+  class HttpRequestInterceptorVendorMediaTypeProvider
 
-    MIME_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\."=]*)*)/
+    MEDIA_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\."=]*)*)/
 
-    constructor: (@headers, @paths, @mimeTypes, @useVersionParam = false) ->
+    constructor: (@headers, @paths, @mediaTypes, @useVersionParam = false) ->
 
     matchingRequests: (@paths) -> @
-    matchingMimeTypes: (@mimeTypes) -> @
+    matchingMediaTypes: (@mediaTypes) -> @
     withVendor: (@vendor) -> @
     withVersionParam: () ->
       @useVersionParam = true
@@ -122,16 +122,16 @@ angular.module 'ngVendorMimeType', []
       @
 
     $get: ($q) ->
-      parser = new MimeTypeParser(MIME_TYPE_PATTERN)
+      parser = new MediaTypeParser(MEDIA_TYPE_PATTERN)
 
       headers = @headers
       paths = @paths
-      mimeTypes = parseMimeTypes(parser, @mimeTypes)
+      mediaTypes = parseMediaTypes(parser, @mediaTypes)
       vendor = @vendor
       useVersionParam = @useVersionParam
 
       processor = new HeaderProcessor(parser, {
-        mimeTypes: mimeTypes
+        mediaTypes: mediaTypes
         vendor: vendor
         useVersionParam: useVersionParam
       })
@@ -152,6 +152,6 @@ angular.module 'ngVendorMimeType', []
           return config or $q.when(config)
       )
 
-  return new HttpRequestInterceptorVendorMimeTypeProvider(
+  return new HttpRequestInterceptorVendorMediaTypeProvider(
     ['Accept', 'Content-Type'], [/.*/], ['text/xml', 'application/xml', 'application/json'])
 )

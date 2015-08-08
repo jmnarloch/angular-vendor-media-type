@@ -1,34 +1,34 @@
 (function() {
-  angular.module('ngVendorMimeType', []).config([
+  angular.module('ngVendorMediaType', []).config([
     '$httpProvider', function($httpProvider) {
-      return $httpProvider.interceptors.push('httpRequestInterceptorVendorMimeType');
+      return $httpProvider.interceptors.push('httpRequestInterceptorVendorMediaType');
     }
-  ]).provider('httpRequestInterceptorVendorMimeType', function() {
-    var HeaderProcessor, HttpRequestInterceptorVendorMimeTypeProvider, MimeType, MimeTypeParser, MimeTypeTransformer, append, parseMimeTypes;
-    parseMimeTypes = function(parser, mimeTypes) {
-      var i, len, mimeType, mimes;
-      mimes = [];
-      if ((mimeTypes != null) && mimeTypes.length > 0) {
-        for (i = 0, len = mimeTypes.length; i < len; i++) {
-          mimeType = mimeTypes[i];
-          mimes.push(parser.parse(mimeType));
+  ]).provider('httpRequestInterceptorVendorMediaType', function() {
+    var HeaderProcessor, HttpRequestInterceptorVendorMediaTypeProvider, MediaType, MediaTypeParser, MediaTypeTransformer, append, parseMediaTypes;
+    parseMediaTypes = function(parser, mediaTypes) {
+      var i, len, mediaType, types;
+      types = [];
+      if ((mediaTypes != null) && mediaTypes.length > 0) {
+        for (i = 0, len = mediaTypes.length; i < len; i++) {
+          mediaType = mediaTypes[i];
+          types.push(parser.parse(mediaType));
         }
       }
-      return mimes;
+      return types;
     };
     append = function(parts, value) {
       if (value != null) {
         return parts.push(value);
       }
     };
-    MimeType = (function() {
-      function MimeType(type1, subtype1, parameters1) {
+    MediaType = (function() {
+      function MediaType(type1, subtype1, parameters1) {
         this.type = type1;
         this.subtype = subtype1;
         this.parameters = parameters1;
       }
 
-      MimeType.prototype.toString = function() {
+      MediaType.prototype.toString = function() {
         var result;
         result = [];
         append(result, this.type);
@@ -38,49 +38,49 @@
         return result.join('');
       };
 
-      MimeType.prototype.equal = function(other) {
+      MediaType.prototype.equal = function(other) {
         return other.type.trim() === this.type.trim() && other.subtype.trim() === this.subtype.trim();
       };
 
-      return MimeType;
+      return MediaType;
 
     })();
-    MimeTypeParser = (function() {
-      function MimeTypeParser(pattern) {
+    MediaTypeParser = (function() {
+      function MediaTypeParser(pattern) {
         this.pattern = pattern;
       }
 
-      MimeTypeParser.prototype.parse = function(mimeType) {
+      MediaTypeParser.prototype.parse = function(mediaType) {
         var matches, parameters, ref, subtype, type;
-        matches = this.pattern.exec(mimeType);
+        matches = this.pattern.exec(mediaType);
         ref = matches.slice(1, 4), type = ref[0], subtype = ref[1], parameters = ref[2];
-        return new MimeType(type, subtype, parameters);
+        return new MediaType(type, subtype, parameters);
       };
 
-      return MimeTypeParser;
+      return MediaTypeParser;
 
     })();
-    MimeTypeTransformer = (function() {
-      var MIME_TYPE_SEPARATOR, toVendorString;
+    MediaTypeTransformer = (function() {
+      var MEDIA_TYPE_SEPARATOR, toVendorString;
 
-      MIME_TYPE_SEPARATOR = '.';
+      MEDIA_TYPE_SEPARATOR = '.';
 
-      function MimeTypeTransformer(vendor1, useVersionParam1) {
+      function MediaTypeTransformer(vendor1, useVersionParam1) {
         this.vendor = vendor1;
         this.useVersionParam = useVersionParam1;
       }
 
-      MimeTypeTransformer.prototype.transform = function(mimeType) {
+      MediaTypeTransformer.prototype.transform = function(mediaType) {
         var parameters, params, ref, ref1, subtype;
-        ref = [mimeType.subtype, mimeType.parameters], subtype = ref[0], parameters = ref[1];
-        mimeType.subtype = toVendorString(this.vendor, this.useVersionParam) + '+' + subtype;
+        ref = [mediaType.subtype, mediaType.parameters], subtype = ref[0], parameters = ref[1];
+        mediaType.subtype = toVendorString(this.vendor, this.useVersionParam) + '+' + subtype;
         if (this.useVersionParam === true && (((ref1 = this.vendor) != null ? ref1.version : void 0) != null)) {
           params = [];
           append(params, '; version=');
           append(params, this.vendor.version);
-          mimeType.parameters += params.join('');
+          mediaType.parameters += params.join('');
         }
-        return mimeType;
+        return mediaType;
       };
 
       toVendorString = function(vendor, useVersionParam) {
@@ -91,10 +91,10 @@
         if (useVersionParam === false && ((vendor != null ? vendor.version : void 0) != null)) {
           parts.push('v' + vendor.version);
         }
-        return parts.join(MIME_TYPE_SEPARATOR);
+        return parts.join(MEDIA_TYPE_SEPARATOR);
       };
 
-      return MimeTypeTransformer;
+      return MediaTypeTransformer;
 
     })();
     HeaderProcessor = (function() {
@@ -105,37 +105,37 @@
       function HeaderProcessor(parser, config) {
         this.parser = parser;
         this.config = config;
-        this.transformer = new MimeTypeTransformer(config.vendor, config.useVersionParam);
+        this.transformer = new MediaTypeTransformer(config.vendor, config.useVersionParam);
       }
 
       HeaderProcessor.prototype.process = function(header) {
-        var headerMimeType, headerMimeTypes, i, len, mime, result;
+        var headerMediaType, headerMediaTypes, i, len, mediaType, result;
         if (!((header != null) && header)) {
           return header;
         }
-        headerMimeTypes = this.extractMimeTypes(header);
+        headerMediaTypes = this.extractMediaTypes(header);
         result = [];
-        for (i = 0, len = headerMimeTypes.length; i < len; i++) {
-          headerMimeType = headerMimeTypes[i];
-          mime = headerMimeType;
-          if (this.matchesMimeTypes(headerMimeType)) {
-            mime = this.transformer.transform(headerMimeType);
+        for (i = 0, len = headerMediaTypes.length; i < len; i++) {
+          headerMediaType = headerMediaTypes[i];
+          mediaType = headerMediaType;
+          if (this.matchesMediaTypes(headerMediaType)) {
+            mediaType = this.transformer.transform(headerMediaType);
           }
-          result.push(mime.toString());
+          result.push(mediaType.toString());
         }
         return result.join(SEPARATOR);
       };
 
-      HeaderProcessor.prototype.extractMimeTypes = function(header) {
-        return parseMimeTypes(this.parser, header.split(SEPARATOR));
+      HeaderProcessor.prototype.extractMediaTypes = function(header) {
+        return parseMediaTypes(this.parser, header.split(SEPARATOR));
       };
 
-      HeaderProcessor.prototype.matchesMimeTypes = function(headerMimeType) {
-        var i, len, mimeType, ref;
-        ref = this.config.mimeTypes;
+      HeaderProcessor.prototype.matchesMediaTypes = function(headerMediaType) {
+        var i, len, mediaType, ref;
+        ref = this.config.mediaTypes;
         for (i = 0, len = ref.length; i < len; i++) {
-          mimeType = ref[i];
-          if (mimeType.equal(headerMimeType)) {
+          mediaType = ref[i];
+          if (mediaType.equal(headerMediaType)) {
             return true;
           }
         }
@@ -145,53 +145,53 @@
       return HeaderProcessor;
 
     })();
-    HttpRequestInterceptorVendorMimeTypeProvider = (function() {
-      var MIME_TYPE_PATTERN;
+    HttpRequestInterceptorVendorMediaTypeProvider = (function() {
+      var MEDIA_TYPE_PATTERN;
 
-      MIME_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\."=]*)*)/;
+      MEDIA_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\."=]*)*)/;
 
-      function HttpRequestInterceptorVendorMimeTypeProvider(headers1, paths1, mimeTypes1, useVersionParam1) {
+      function HttpRequestInterceptorVendorMediaTypeProvider(headers1, paths1, mediaTypes1, useVersionParam1) {
         this.headers = headers1;
         this.paths = paths1;
-        this.mimeTypes = mimeTypes1;
+        this.mediaTypes = mediaTypes1;
         this.useVersionParam = useVersionParam1 != null ? useVersionParam1 : false;
       }
 
-      HttpRequestInterceptorVendorMimeTypeProvider.prototype.matchingRequests = function(paths1) {
+      HttpRequestInterceptorVendorMediaTypeProvider.prototype.matchingRequests = function(paths1) {
         this.paths = paths1;
         return this;
       };
 
-      HttpRequestInterceptorVendorMimeTypeProvider.prototype.matchingMimeTypes = function(mimeTypes1) {
-        this.mimeTypes = mimeTypes1;
+      HttpRequestInterceptorVendorMediaTypeProvider.prototype.matchingMediaTypes = function(mediaTypes1) {
+        this.mediaTypes = mediaTypes1;
         return this;
       };
 
-      HttpRequestInterceptorVendorMimeTypeProvider.prototype.withVendor = function(vendor1) {
+      HttpRequestInterceptorVendorMediaTypeProvider.prototype.withVendor = function(vendor1) {
         this.vendor = vendor1;
         return this;
       };
 
-      HttpRequestInterceptorVendorMimeTypeProvider.prototype.withVersionParam = function() {
+      HttpRequestInterceptorVendorMediaTypeProvider.prototype.withVersionParam = function() {
         this.useVersionParam = true;
         return this;
       };
 
-      HttpRequestInterceptorVendorMimeTypeProvider.prototype.withoutVersionParam = function() {
+      HttpRequestInterceptorVendorMediaTypeProvider.prototype.withoutVersionParam = function() {
         this.useVersionParam = false;
         return this;
       };
 
-      HttpRequestInterceptorVendorMimeTypeProvider.prototype.$get = function($q) {
-        var headers, matchesPath, mimeTypes, parser, paths, processor, useVersionParam, vendor;
-        parser = new MimeTypeParser(MIME_TYPE_PATTERN);
+      HttpRequestInterceptorVendorMediaTypeProvider.prototype.$get = function($q) {
+        var headers, matchesPath, mediaTypes, parser, paths, processor, useVersionParam, vendor;
+        parser = new MediaTypeParser(MEDIA_TYPE_PATTERN);
         headers = this.headers;
         paths = this.paths;
-        mimeTypes = parseMimeTypes(parser, this.mimeTypes);
+        mediaTypes = parseMediaTypes(parser, this.mediaTypes);
         vendor = this.vendor;
         useVersionParam = this.useVersionParam;
         processor = new HeaderProcessor(parser, {
-          mimeTypes: mimeTypes,
+          mediaTypes: mediaTypes,
           vendor: vendor,
           useVersionParam: useVersionParam
         });
@@ -219,10 +219,10 @@
         };
       };
 
-      return HttpRequestInterceptorVendorMimeTypeProvider;
+      return HttpRequestInterceptorVendorMediaTypeProvider;
 
     })();
-    return new HttpRequestInterceptorVendorMimeTypeProvider(['Accept', 'Content-Type'], [/.*/], ['text/xml', 'application/xml', 'application/json']);
+    return new HttpRequestInterceptorVendorMediaTypeProvider(['Accept', 'Content-Type'], [/.*/], ['text/xml', 'application/xml', 'application/json']);
   });
 
 }).call(this);

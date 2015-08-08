@@ -13,31 +13,31 @@ bower install angular-vendor-media-type --save
 In your Angular module register plugin as module dependency
 
 ```
-angular.module('app', ['ngVendorMimeType'])
+angular.module('app', ['ngVendorMediaType'])
 ```
 
 ## Configure
 
-Optionally configure the `httpRequestInterceptorVendorMimeTypeProvider` by setting the matched request urls,
-mime types and the vendor information using fluent API:
+Optionally configure the `httpRequestInterceptorVendorMediaTypeProvider` by setting the matched request urls,
+media types and the vendor information using fluent API:
 
 ```
-angular.module('app', ['ngVendorMimeType'])
-.config(function(httpRequestInterceptorVendorMimeTypeProvider) {
-    httpRequestInterceptorVendorMimeTypeProvider
-        .matchingRequests([/.*api.*/])
-        .matchingMimeTypes(['text/xml', 'application/xml', 'application/json'])
-        .withVendor({
-          name: 'vnd',
-          application: 'appname',
-          version: '1'
-        });
+angular.module('app', ['ngVendorMediaType'])
+.config(function(httpRequestInterceptorVendorMediaTypeProvider) {
+    httpRequestInterceptorVendorMediaTypeProvider
+      .matchingRequests([/.*api.*/])
+      .matchingMediaTypes(['text/xml', 'application/xml', 'application/json'])
+      .withVendor({
+        name: 'vnd',
+        application: 'appname',
+        version: '1'
+      })
 });
 ```
 
 ## How it works
 
-The extension intercepts any outgoing $http request and *transforms* the `Accept` and `Content-Type` headers MIME types. 
+The extension intercepts any outgoing $http request and *transforms* the `Accept` and `Content-Type` headers media types. 
 If your application makes fallowing request:
   
 ```
@@ -64,10 +64,10 @@ Default value: `[\.*\]`
 
 Defines the list of request url regexes
 
-### matchingMimeTypes
+### matchingMediaTypes
 Default value: `['text/xml', 'application/xml', 'application/json']`
 
-Defines the list of MIME types to modify
+Defines the list of media types to modify
 
 ### withVendor
 Default value: `null`
@@ -77,12 +77,16 @@ Defines the vendor information
 ### withVersionParam
 Default value: `false`
 
-Allows to pass the version as additional MIME type parameter i.e.: `application/vnd.appname+json; version=1`
+Allows to pass the version as additional media type parameter i.e.: `application/vnd.appname+json; version=1`
 
 ### withoutVersionParam
 Default value: `false`
 
-Disables passing the MIME version parameter
+Disables passing the media type version parameter
+
+## Migrate from 1.x to 2.x
+
+For consistency all MIME Type references in object or module naming has been changes into Media Type. 
 
 ## License
 

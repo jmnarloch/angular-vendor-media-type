@@ -30,10 +30,10 @@ expectPOST = (config) ->
   ))
   $httpBackend.flush()
 
-describe 'ngVendorMimeType', ->
+describe 'ngVendorMediaType', ->
 
   describe 'with unconfigured provider', ->
-    beforeEach module('ngVendorMimeType')
+    beforeEach module('ngVendorMediaType')
 
     beforeEach inject ($injector) ->
       $httpBackend = $injector.get('$httpBackend')
@@ -53,7 +53,7 @@ describe 'ngVendorMimeType', ->
             'Accept': 'text/html'
 
     describe 'should match the request url', ->
-      it 'should not alter the Accept header uri with undefined vendor mime type', ->
+      it 'should not alter the Accept header uri with undefined vendor media type', ->
         expectGET
           path: '/api/invoices'
           headers:
@@ -62,10 +62,10 @@ describe 'ngVendorMimeType', ->
             'Accept': 'application/json'
 
   describe 'with configured provider', ->
-    beforeEach module 'ngVendorMimeType', (httpRequestInterceptorVendorMimeTypeProvider) ->
-      httpRequestInterceptorVendorMimeTypeProvider
+    beforeEach module 'ngVendorMediaType', (httpRequestInterceptorVendorMediaTypeProvider) ->
+      httpRequestInterceptorVendorMediaTypeProvider
           .matchingRequests([/.*api.*/])
-          .matchingMimeTypes(['text/xml', 'application/xml', 'application/json'])
+          .matchingMediaTypes(['text/xml', 'application/xml', 'application/json'])
           .withVendor(
             name: 'vnd',
             application: 'appname',
@@ -138,7 +138,7 @@ describe 'ngVendorMimeType', ->
             'Accept': 'application/vnd.appname.v1+json'
             'Content-Type': 'text/vnd.appname.v1+xml'
 
-    describe 'should match the request url with multiple mimetypes', ->
+    describe 'should match the request url with multiple media types', ->
       it 'should alter the Accept header', ->
         expectGET
           path: '/api/invoices'
@@ -147,7 +147,7 @@ describe 'ngVendorMimeType', ->
           expected:
             'Accept': '*/*,application/*,application/vnd.appname.v1+json'
 
-    describe 'should match the request url with multiple mimetypes and whitespaces', ->
+    describe 'should match the request url with multiple media types and whitespaces', ->
       it 'should alter the Accept header', ->
         expectGET
           path: '/api/invoices'
@@ -156,7 +156,7 @@ describe 'ngVendorMimeType', ->
           expected:
             'Accept': '*/*, application/*, application/vnd.appname.v1+json'
 
-    describe 'should match the request url with multiple mimetypes and quality factor', ->
+    describe 'should match the request url with multiple media types and quality factor', ->
       it 'should alter the Accept header', ->
         expectGET
           path: '/api/invoices'
@@ -165,7 +165,7 @@ describe 'ngVendorMimeType', ->
           expected:
             'Accept': 'application/vnd.appname.v1+json; q=0.8,application/vnd.appname.v1+xml; q=0.6'
 
-    describe 'should match the request url with multiple mimetypes, quality factor and custom parameters', ->
+    describe 'should match the request url with multiple media types, quality factor and custom parameters', ->
       it 'should alter the Accept header', ->
         expectGET
           path: '/api/invoices'
@@ -174,7 +174,7 @@ describe 'ngVendorMimeType', ->
           expected:
             'Accept': 'application/vnd.appname.v1+json; profile="test"; q=0.8,application/vnd.appname.v1+xml; q=0.6'
 
-    describe 'should not match the request mime types', ->
+    describe 'should not match the request media types', ->
       it 'should not alter the Accept header', ->
         expectGET
           path: '/views/index.html'
@@ -183,7 +183,7 @@ describe 'ngVendorMimeType', ->
           expected:
             'Accept': 'application/json; q=0.8,application/xml; q=0.6'
 
-    describe 'should not match the request empty mime types', ->
+    describe 'should not match the request empty media types', ->
       it 'should not alter the Accept header', ->
         expectGET
           path: '/api/invoices'
@@ -193,10 +193,10 @@ describe 'ngVendorMimeType', ->
             'Accept': ''
 
   describe 'with configured provider', ->
-    beforeEach module 'ngVendorMimeType', (httpRequestInterceptorVendorMimeTypeProvider) ->
-      httpRequestInterceptorVendorMimeTypeProvider
+    beforeEach module 'ngVendorMediaType', (httpRequestInterceptorVendorMediaTypeProvider) ->
+      httpRequestInterceptorVendorMediaTypeProvider
           .matchingRequests([/.*/])
-          .matchingMimeTypes(['text/xml', 'application/xml', 'application/json'])
+          .matchingMediaTypes(['text/xml', 'application/xml', 'application/json'])
           .withVendor(
             name: 'vnd',
             application: 'appname',
