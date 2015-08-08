@@ -4,35 +4,65 @@ angular.module 'ngVendorMimeType', []
 ]
 .provider('httpRequestInterceptorVendorMimeType', ->
 
+  parseMimeTypes = (parser, mimeTypes) ->
+    mimes = []
+    if mimeTypes? and mimeTypes.length > 0
+      for mimeType in mimeTypes
+        mimes.push(parser.parse(mimeType))
+
+    mimes
+
+  append = (parts, value) ->
+    if value?
+      parts.push value
+
+  class MimeType
+
+    constructor: (@type, @subtype, @parameters) ->
+
+    toString: () ->
+      result = []
+      append result, @type
+      append result, '/'
+      append result, @subtype
+      append result, @parameters
+      result.join('')
+
+    equal: (other) ->
+      return other.type.trim() == @type.trim() and
+          other.subtype.trim() == @subtype.trim()
+
+  class MimeTypeParser
+
+    constructor: (@pattern) ->
+
+    parse: (mimeType) ->
+
+      matches = @pattern.exec mimeType
+      [type, subtype, parameters] = matches[1..3]
+
+      new MimeType(type, subtype, parameters)
+
   class MimeTypeTransformer
 
     MIME_TYPE_SEPARATOR = '.'
-    MIME_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\."=]*)*)/
 
-    constructor: (vendor, useVersionParam) ->
-      @vendor = vendor
-      @useVersionParam = useVersionParam
-      @vendorMimeType = toString(vendor, useVersionParam)
+    constructor: (@vendor, @useVersionParam) ->
 
     transform: (mimeType) ->
 
-      matches = MIME_TYPE_PATTERN.exec mimeType
-      [type, subtype, parameters] = matches[1..3]
-      result = []
-      append result, type
-      append result, '/'
-      append result, @vendorMimeType
-      append result, '+'
-      append result, subtype
-      append result, parameters
+      [subtype, parameters] = [mimeType.subtype, mimeType.parameters]
+      mimeType.subtype = toVendorString(@vendor, @useVersionParam) + '+' + subtype
 
       if @useVersionParam is true and @vendor?.version?
-        append result, '; version='
-        append result, @vendor.version
+        params = []
+        append params, '; version='
+        append params, @vendor.version
+        mimeType.parameters += params.join('')
 
-      result.join('')
+      mimeType
 
-    toString = (vendor, useVersionParam) ->
+    toVendorString = (vendor, useVersionParam) ->
       parts = []
       append parts, vendor?.name
       append parts, vendor?.application
@@ -41,24 +71,17 @@ angular.module 'ngVendorMimeType', []
 
       parts.join MIME_TYPE_SEPARATOR
 
-    append = (parts, value) ->
-      if value?
-        parts.push value
-
-  class AcceptHeaderProcessor
+  class HeaderProcessor
 
     SEPARATOR = ','
 
-    constructor: (config) ->
-      @config = angular.extend((
-        mimeTypePattern: /([\s\w\d+\-\/\*\.]+)((:?;[\s\w\d+\-*\.=])*)/
-      ), config)
-      @transformer = new MimeTypeTransformer(@config.vendor,
-        config.useVersionParam
-      )
+    constructor: (parser, config) ->
+      @parser = parser
+      @config = config
+      @transformer = new MimeTypeTransformer(config.vendor, config.useVersionParam)
 
     process: (header) ->
-      if not header?
+      unless header? and header
         return header
 
       headerMimeTypes = @extractMimeTypes header
@@ -69,32 +92,24 @@ angular.module 'ngVendorMimeType', []
         if @matchesMimeTypes headerMimeType
           mime = @transformer.transform headerMimeType
 
-        result.push mime
+        result.push mime.toString()
 
       return result.join SEPARATOR
 
     extractMimeTypes: (header) ->
-      return header.split(SEPARATOR)
+      return parseMimeTypes(@parser, header.split(SEPARATOR))
 
     matchesMimeTypes: (headerMimeType) ->
-      mimeTypePattern = @config.mimeTypePattern
-      if not mimeTypePattern.test headerMimeType
-        return false
-
-      match = mimeTypePattern.exec headerMimeType
-      type = match[1].trim()
-
       for mimeType in @config.mimeTypes
-        if mimeType == type
+        if mimeType.equal(headerMimeType)
           return true
       return false
 
   class HttpRequestInterceptorVendorMimeTypeProvider
 
-    constructor: (paths, mimeTypes) ->
-      @paths = paths
-      @mimeTypes = mimeTypes
-      @useVersionParam = false
+    MIME_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\."=]*)*)/
+
+    constructor: (@headers, @paths, @mimeTypes, @useVersionParam = false) ->
 
     matchingRequests: (@paths) -> @
     matchingMimeTypes: (@mimeTypes) -> @
@@ -107,16 +122,19 @@ angular.module 'ngVendorMimeType', []
       @
 
     $get: ($q) ->
+      parser = new MimeTypeParser(MIME_TYPE_PATTERN)
+
+      headers = @headers
       paths = @paths
-      mimeTypes = @mimeTypes
+      mimeTypes = parseMimeTypes(parser, @mimeTypes)
       vendor = @vendor
       useVersionParam = @useVersionParam
 
-      processor = new AcceptHeaderProcessor(
+      processor = new HeaderProcessor(parser, {
         mimeTypes: mimeTypes
         vendor: vendor
         useVersionParam: useVersionParam
-      )
+      })
 
       matchesPath = (url) ->
         for path in paths
@@ -128,12 +146,12 @@ angular.module 'ngVendorMimeType', []
       return (
         'request': (config) ->
           if angular.isDefined(vendor) and matchesPath(config.url)
-            console.log 'Altering headers ' + config.url
-            config.headers.Accept = processor.process config.headers.Accept
-            config.headers['Content-Type'] = processor.process config.headers['Content-Type']
+            for header in headers
+              config.headers[header] = processor.process config.headers[header]
 
           return config or $q.when(config)
       )
 
-  return new HttpRequestInterceptorVendorMimeTypeProvider([/.*/], ['text/xml', 'application/xml', 'application/json'])
+  return new HttpRequestInterceptorVendorMimeTypeProvider(
+    ['Accept', 'Content-Type'], [/.*/], ['text/xml', 'application/xml', 'application/json'])
 )

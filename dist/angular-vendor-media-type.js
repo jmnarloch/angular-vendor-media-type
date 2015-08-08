@@ -4,39 +4,86 @@
       return $httpProvider.interceptors.push('httpRequestInterceptorVendorMimeType');
     }
   ]).provider('httpRequestInterceptorVendorMimeType', function() {
-    var AcceptHeaderProcessor, HttpRequestInterceptorVendorMimeTypeProvider, MimeTypeTransformer;
-    MimeTypeTransformer = (function() {
-      var MIME_TYPE_PATTERN, MIME_TYPE_SEPARATOR, append, toString;
-
-      MIME_TYPE_SEPARATOR = '.';
-
-      MIME_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\."=]*)*)/;
-
-      function MimeTypeTransformer(vendor, useVersionParam) {
-        this.vendor = vendor;
-        this.useVersionParam = useVersionParam;
-        this.vendorMimeType = toString(vendor, useVersionParam);
+    var HeaderProcessor, HttpRequestInterceptorVendorMimeTypeProvider, MimeType, MimeTypeParser, MimeTypeTransformer, append, parseMimeTypes;
+    parseMimeTypes = function(parser, mimeTypes) {
+      var i, len, mimeType, mimes;
+      mimes = [];
+      if ((mimeTypes != null) && mimeTypes.length > 0) {
+        for (i = 0, len = mimeTypes.length; i < len; i++) {
+          mimeType = mimeTypes[i];
+          mimes.push(parser.parse(mimeType));
+        }
+      }
+      return mimes;
+    };
+    append = function(parts, value) {
+      if (value != null) {
+        return parts.push(value);
+      }
+    };
+    MimeType = (function() {
+      function MimeType(type1, subtype1, parameters1) {
+        this.type = type1;
+        this.subtype = subtype1;
+        this.parameters = parameters1;
       }
 
-      MimeTypeTransformer.prototype.transform = function(mimeType) {
-        var matches, parameters, ref, ref1, result, subtype, type;
-        matches = MIME_TYPE_PATTERN.exec(mimeType);
-        ref = matches.slice(1, 4), type = ref[0], subtype = ref[1], parameters = ref[2];
+      MimeType.prototype.toString = function() {
+        var result;
         result = [];
-        append(result, type);
+        append(result, this.type);
         append(result, '/');
-        append(result, this.vendorMimeType);
-        append(result, '+');
-        append(result, subtype);
-        append(result, parameters);
-        if (this.useVersionParam === true && (((ref1 = this.vendor) != null ? ref1.version : void 0) != null)) {
-          append(result, '; version=');
-          append(result, this.vendor.version);
-        }
+        append(result, this.subtype);
+        append(result, this.parameters);
         return result.join('');
       };
 
-      toString = function(vendor, useVersionParam) {
+      MimeType.prototype.equal = function(other) {
+        return other.type.trim() === this.type.trim() && other.subtype.trim() === this.subtype.trim();
+      };
+
+      return MimeType;
+
+    })();
+    MimeTypeParser = (function() {
+      function MimeTypeParser(pattern) {
+        this.pattern = pattern;
+      }
+
+      MimeTypeParser.prototype.parse = function(mimeType) {
+        var matches, parameters, ref, subtype, type;
+        matches = this.pattern.exec(mimeType);
+        ref = matches.slice(1, 4), type = ref[0], subtype = ref[1], parameters = ref[2];
+        return new MimeType(type, subtype, parameters);
+      };
+
+      return MimeTypeParser;
+
+    })();
+    MimeTypeTransformer = (function() {
+      var MIME_TYPE_SEPARATOR, toVendorString;
+
+      MIME_TYPE_SEPARATOR = '.';
+
+      function MimeTypeTransformer(vendor1, useVersionParam1) {
+        this.vendor = vendor1;
+        this.useVersionParam = useVersionParam1;
+      }
+
+      MimeTypeTransformer.prototype.transform = function(mimeType) {
+        var parameters, params, ref, ref1, subtype;
+        ref = [mimeType.subtype, mimeType.parameters], subtype = ref[0], parameters = ref[1];
+        mimeType.subtype = toVendorString(this.vendor, this.useVersionParam) + '+' + subtype;
+        if (this.useVersionParam === true && (((ref1 = this.vendor) != null ? ref1.version : void 0) != null)) {
+          params = [];
+          append(params, '; version=');
+          append(params, this.vendor.version);
+          mimeType.parameters += params.join('');
+        }
+        return mimeType;
+      };
+
+      toVendorString = function(vendor, useVersionParam) {
         var parts;
         parts = [];
         append(parts, vendor != null ? vendor.name : void 0);
@@ -47,30 +94,23 @@
         return parts.join(MIME_TYPE_SEPARATOR);
       };
 
-      append = function(parts, value) {
-        if (value != null) {
-          return parts.push(value);
-        }
-      };
-
       return MimeTypeTransformer;
 
     })();
-    AcceptHeaderProcessor = (function() {
+    HeaderProcessor = (function() {
       var SEPARATOR;
 
       SEPARATOR = ',';
 
-      function AcceptHeaderProcessor(config) {
-        this.config = angular.extend({
-          mimeTypePattern: /([\s\w\d+\-\/\*\.]+)((:?;[\s\w\d+\-*\.=])*)/
-        }, config);
-        this.transformer = new MimeTypeTransformer(this.config.vendor, config.useVersionParam);
+      function HeaderProcessor(parser, config) {
+        this.parser = parser;
+        this.config = config;
+        this.transformer = new MimeTypeTransformer(config.vendor, config.useVersionParam);
       }
 
-      AcceptHeaderProcessor.prototype.process = function(header) {
+      HeaderProcessor.prototype.process = function(header) {
         var headerMimeType, headerMimeTypes, i, len, mime, result;
-        if (header == null) {
+        if (!((header != null) && header)) {
           return header;
         }
         headerMimeTypes = this.extractMimeTypes(header);
@@ -81,41 +121,40 @@
           if (this.matchesMimeTypes(headerMimeType)) {
             mime = this.transformer.transform(headerMimeType);
           }
-          result.push(mime);
+          result.push(mime.toString());
         }
         return result.join(SEPARATOR);
       };
 
-      AcceptHeaderProcessor.prototype.extractMimeTypes = function(header) {
-        return header.split(SEPARATOR);
+      HeaderProcessor.prototype.extractMimeTypes = function(header) {
+        return parseMimeTypes(this.parser, header.split(SEPARATOR));
       };
 
-      AcceptHeaderProcessor.prototype.matchesMimeTypes = function(headerMimeType) {
-        var i, len, match, mimeType, mimeTypePattern, ref, type;
-        mimeTypePattern = this.config.mimeTypePattern;
-        if (!mimeTypePattern.test(headerMimeType)) {
-          return false;
-        }
-        match = mimeTypePattern.exec(headerMimeType);
-        type = match[1].trim();
+      HeaderProcessor.prototype.matchesMimeTypes = function(headerMimeType) {
+        var i, len, mimeType, ref;
         ref = this.config.mimeTypes;
         for (i = 0, len = ref.length; i < len; i++) {
           mimeType = ref[i];
-          if (mimeType === type) {
+          if (mimeType.equal(headerMimeType)) {
             return true;
           }
         }
         return false;
       };
 
-      return AcceptHeaderProcessor;
+      return HeaderProcessor;
 
     })();
     HttpRequestInterceptorVendorMimeTypeProvider = (function() {
-      function HttpRequestInterceptorVendorMimeTypeProvider(paths, mimeTypes) {
-        this.paths = paths;
-        this.mimeTypes = mimeTypes;
-        this.useVersionParam = false;
+      var MIME_TYPE_PATTERN;
+
+      MIME_TYPE_PATTERN = /([\s\w\d+\-\*\.]+)\/([\s\w\d+-\/\*\.]+)((:?;[\s\w\d+\-*\."=]*)*)/;
+
+      function HttpRequestInterceptorVendorMimeTypeProvider(headers1, paths1, mimeTypes1, useVersionParam1) {
+        this.headers = headers1;
+        this.paths = paths1;
+        this.mimeTypes = mimeTypes1;
+        this.useVersionParam = useVersionParam1 != null ? useVersionParam1 : false;
       }
 
       HttpRequestInterceptorVendorMimeTypeProvider.prototype.matchingRequests = function(paths1) {
@@ -144,12 +183,14 @@
       };
 
       HttpRequestInterceptorVendorMimeTypeProvider.prototype.$get = function($q) {
-        var matchesPath, mimeTypes, paths, processor, useVersionParam, vendor;
+        var headers, matchesPath, mimeTypes, parser, paths, processor, useVersionParam, vendor;
+        parser = new MimeTypeParser(MIME_TYPE_PATTERN);
+        headers = this.headers;
         paths = this.paths;
-        mimeTypes = this.mimeTypes;
+        mimeTypes = parseMimeTypes(parser, this.mimeTypes);
         vendor = this.vendor;
         useVersionParam = this.useVersionParam;
-        processor = new AcceptHeaderProcessor({
+        processor = new HeaderProcessor(parser, {
           mimeTypes: mimeTypes,
           vendor: vendor,
           useVersionParam: useVersionParam
@@ -166,10 +207,12 @@
         };
         return {
           'request': function(config) {
+            var header, i, len;
             if (angular.isDefined(vendor) && matchesPath(config.url)) {
-              console.log('Altering headers ' + config.url);
-              config.headers.Accept = processor.process(config.headers.Accept);
-              config.headers['Content-Type'] = processor.process(config.headers['Content-Type']);
+              for (i = 0, len = headers.length; i < len; i++) {
+                header = headers[i];
+                config.headers[header] = processor.process(config.headers[header]);
+              }
             }
             return config || $q.when(config);
           }
@@ -179,7 +222,7 @@
       return HttpRequestInterceptorVendorMimeTypeProvider;
 
     })();
-    return new HttpRequestInterceptorVendorMimeTypeProvider([/.*/], ['text/xml', 'application/xml', 'application/json']);
+    return new HttpRequestInterceptorVendorMimeTypeProvider(['Accept', 'Content-Type'], [/.*/], ['text/xml', 'application/xml', 'application/json']);
   });
 
 }).call(this);
