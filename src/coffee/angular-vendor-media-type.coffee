@@ -127,8 +127,8 @@ angular.module 'ngVendorMimeType', []
 
       return (
         'request': (config) ->
-          if angular.isDefined vendor and matchesPath config.url
-
+          if angular.isDefined(vendor) and matchesPath(config.url)
+            console.log 'Altering headers ' + config.url
             config.headers.Accept = processor.process config.headers.Accept
             config.headers['Content-Type'] = processor.process config.headers['Content-Type']
 

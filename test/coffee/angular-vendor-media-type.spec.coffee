@@ -1,8 +1,38 @@
-describe 'ngVendorMimeType', ->
-  $httpBackend = null
-  $http = null
 
-  describe 'With unconfigured provider', ->
+$httpBackend = null
+$http = null
+
+expectGET = (config) ->
+  $httpBackend.expectGET(config.path, (headers) ->
+    matches = true
+    for k, v of config.expected
+      if headers[k] != config.expected[k]
+        matches = false
+        break
+    return matches
+  ).respond(200)
+  $http.get(config.path, (
+    headers: config.headers
+  ))
+  $httpBackend.flush()
+
+expectPOST = (config) ->
+  $httpBackend.expectPOST(config.path, undefined, (headers) ->
+    matches = true
+    for k, v of config.expected
+      if headers[k] != config.expected[k]
+        matches = false
+        break
+    return matches
+  ).respond(200)
+  $http.post(config.path, config.data, (
+    headers: config.headers
+  ))
+  $httpBackend.flush()
+
+describe 'ngVendorMimeType', ->
+
+  describe 'with unconfigured provider', ->
     beforeEach module('ngVendorMimeType')
 
     beforeEach inject ($injector) ->
@@ -13,33 +43,25 @@ describe 'ngVendorMimeType', ->
       $httpBackend.verifyNoOutstandingExpectation()
       $httpBackend.verifyNoOutstandingRequest()
 
-    describe 'Should not match the request url', ->
+    describe 'should not match the request url', ->
       it 'should not alter the Accept', ->
-        path = '/views/index.html'
-        $httpBackend.expectGET(path, (headers) ->
-          return headers.Accept == 'text/html'
-        ).respond(200)
-        $http.get(path, (
-          headers: (
+        expectGET
+          path: '/views/index.html'
+          headers:
             'Accept': 'text/html'
-          )
-        ))
-        $httpBackend.flush()
+          expected:
+            'Accept': 'text/html'
 
-    describe 'Should match the request url', ->
+    describe 'should match the request url', ->
       it 'should not alter the Accept header uri with undefined vendor mime type', ->
-        path = '/api/invoices'
-        $httpBackend.expectGET(path, (headers) ->
-          return headers.Accept == 'application/json'
-        ).respond(200)
-        $http.get(path, (
-          headers: (
+        expectGET
+          path: '/api/invoices'
+          headers:
             'Accept': 'application/json'
-          )
-        ))
-        $httpBackend.flush()
+          expected:
+            'Accept': 'application/json'
 
-  describe 'With configured provider', ->
+  describe 'with configured provider', ->
     beforeEach module 'ngVendorMimeType', (httpRequestInterceptorVendorMimeTypeProvider) ->
       httpRequestInterceptorVendorMimeTypeProvider
           .matchingRequests([/.*api.*/])
@@ -61,98 +83,116 @@ describe 'ngVendorMimeType', ->
       $httpBackend.verifyNoOutstandingExpectation()
       $httpBackend.verifyNoOutstandingRequest()
 
-    describe 'Should not match the request url', ->
+    describe 'should not match the request url', ->
       it 'should not alter the Accept header', ->
-        path = '/views/index.html'
-        $httpBackend.expectGET(path, (headers) ->
-          return headers.Accept == 'text/html'
-        ).respond(200)
-        $http.get(path, (
-          headers: (
+        expectGET
+          path: '/views/index.html'
+          headers:
             'Accept': 'text/html'
-          )
-        ))
-        $httpBackend.flush()
+          expected:
+            'Accept': 'text/html'
 
-    describe 'Should match the request url', ->
+    describe 'should match the request url', ->
       it 'should alter the Accept header', ->
-        path = '/api/invoices'
-        $httpBackend.expectGET(path, (headers) ->
-          return headers.Accept == 'application/vnd.appname.v1+json'
-        ).respond(200)
-        $http.get(path, (
-          headers: (
+        expectGET
+          path: '/api/invoices'
+          headers:
             'Accept': 'application/json'
-          )
-        ))
-        $httpBackend.flush()
+          expected:
+            'Accept': 'application/vnd.appname.v1+json'
 
-    describe 'Should match the request url', ->
-      it 'should alter the Accept header', ->
-        path = '/api/invoices'
-        $httpBackend.expectGET(path, (headers) ->
-          return headers.Accept == 'application/vnd.appname.v1+json'
-        ).respond(200)
-        $http.get(path, (
-          headers: (
+    describe 'should match the request url', ->
+      it 'should alter the Content-Type header', ->
+        expectPOST
+          path: '/api/invoices'
+          data:
+            message: 'test'
+          headers:
+            'Content-Type': 'application/json'
+          expected:
+            'Content-Type': 'application/vnd.appname.v1+json'
+
+    describe 'should match the request url', ->
+      it 'should alter both Accept and Content-Type headers', ->
+        expectPOST
+          path: '/api/invoices'
+          data:
+            message: 'test'
+          headers:
             'Accept': 'application/json'
-          )
-        ))
-        $httpBackend.flush()
+            'Content-Type': 'application/json'
+          expected:
+            'Accept': 'application/vnd.appname.v1+json'
+            'Content-Type': 'application/vnd.appname.v1+json'
 
-    describe 'Should match the request url with multiple mimetypes', ->
+    describe 'should match the request url', ->
+      it 'should alter both Acept and Content-Type headers', ->
+        expectPOST
+          path: '/api/invoices'
+          data:
+            message: 'test'
+          headers:
+            'Accept': 'application/json'
+            'Content-Type': 'text/xml'
+          expected:
+            'Accept': 'application/vnd.appname.v1+json'
+            'Content-Type': 'text/vnd.appname.v1+xml'
+
+    describe 'should match the request url with multiple mimetypes', ->
       it 'should alter the Accept header', ->
-        path = '/api/invoices'
-        $httpBackend.expectGET(path, (headers) ->
-          return headers.Accept == '*/*,application/*,application/vnd.appname.v1+json'
-        ).respond(200)
-        $http.get(path, (
-          headers: (
+        expectGET
+          path: '/api/invoices'
+          headers:
             'Accept': '*/*,application/*,application/json'
-          )
-        ))
-        $httpBackend.flush()
+          expected:
+            'Accept': '*/*,application/*,application/vnd.appname.v1+json'
 
-    describe 'Should match the request url with multiple mimetypes and quality', ->
+    describe 'should match the request url with multiple mimetypes and whitespaces', ->
       it 'should alter the Accept header', ->
-        path = '/api/invoices'
-        $httpBackend.expectGET(path, (headers) ->
-          return headers.Accept == 'application/vnd.appname.v1+json; q=0.8,application/vnd.appname.v1+xml; q=0.6'
-        ).respond(200)
-        $http.get(path, (
-          headers: (
+        expectGET
+          path: '/api/invoices'
+          headers:
+            'Accept': '*/*, application/*, application/json'
+          expected:
+            'Accept': '*/*, application/*, application/vnd.appname.v1+json'
+
+    describe 'should match the request url with multiple mimetypes and quality factor', ->
+      it 'should alter the Accept header', ->
+        expectGET
+          path: '/api/invoices'
+          headers:
             'Accept': 'application/json; q=0.8,application/xml; q=0.6'
-          )
-        ))
-        $httpBackend.flush()
+          expected:
+            'Accept': 'application/vnd.appname.v1+json; q=0.8,application/vnd.appname.v1+xml; q=0.6'
 
-    describe 'Should not match the request mime types', ->
-      it 'should not alter the Accept header', ->
-        path = '/api/invoices'
-        $httpBackend.expectGET(path, (headers) ->
-          return headers.Accept == '*/*,text/plain,text/html'
-        ).respond(200)
-        $http.get(path, (
-          headers: (
-            'Accept': '*/*,text/plain,text/html'
-          )
-        ))
-        $httpBackend.flush()
+    describe 'should match the request url with multiple mimetypes, quality factor and custom parameters', ->
+      it 'should alter the Accept header', ->
+        expectGET
+          path: '/api/invoices'
+          headers:
+            'Accept': 'application/json; profile="test"; q=0.8,application/xml; q=0.6'
+          expected:
+            'Accept': 'application/vnd.appname.v1+json; profile="test"; q=0.8,application/vnd.appname.v1+xml; q=0.6'
 
-    describe 'Should not match the request empty mime types', ->
+    describe 'should not match the request mime types', ->
       it 'should not alter the Accept header', ->
-        path = '/api/invoices'
-        $httpBackend.expectGET(path, (headers) ->
-          return headers.Accept == ''
-        ).respond(200)
-        $http.get(path, (
-          headers: (
+        expectGET
+          path: '/views/index.html'
+          headers:
+            'Accept': 'application/json; q=0.8,application/xml; q=0.6'
+          expected:
+            'Accept': 'application/json; q=0.8,application/xml; q=0.6'
+
+    describe 'should not match the request empty mime types', ->
+      it 'should not alter the Accept header', ->
+        expectGET
+          path: '/api/invoices'
+          headers:
             'Accept': ''
-          )
-        ))
-        $httpBackend.flush()
+          expected:
+            'Accept': ''
 
-  describe 'With configured provider', ->
+  describe 'with configured provider', ->
     beforeEach module 'ngVendorMimeType', (httpRequestInterceptorVendorMimeTypeProvider) ->
       httpRequestInterceptorVendorMimeTypeProvider
           .matchingRequests([/.*/])
@@ -174,15 +214,29 @@ describe 'ngVendorMimeType', ->
       $httpBackend.verifyNoOutstandingExpectation()
       $httpBackend.verifyNoOutstandingRequest()
 
-    describe 'Should match the request url', ->
+    describe 'should match the request url', ->
       it 'should alter the Accept header with version parameter', ->
-        path = '/api/invoices'
-        $httpBackend.expectGET(path, (headers) ->
-          return headers.Accept == 'application/vnd.appname+json; version=1'
-        ).respond(200)
-        $http.get(path, (
-          headers: (
+        expectGET
+          path: '/api/invoices'
+          headers:
             'Accept': 'application/json'
-          )
-        ))
-        $httpBackend.flush()
+          expected:
+            'Accept': 'application/vnd.appname+json; version=1'
+
+    describe 'should match the request url', ->
+      it 'should alter the Accept header with version parameter for multiple media types', ->
+        expectGET
+          path: '/api/invoices'
+          headers:
+            'Accept': '*/*, application/*, application/json'
+          expected:
+            'Accept': '*/*, application/*, application/vnd.appname+json; version=1'
+
+    describe 'should match the request url', ->
+      it 'should alter the Accept header with version parameter for multiple media types and custom properties', ->
+        expectGET
+          path: '/api/invoices'
+          headers:
+            'Accept': '*/*, application/*, application/json; profile="test"'
+          expected:
+            'Accept': '*/*, application/*, application/vnd.appname+json; profile="test"; version=1'
