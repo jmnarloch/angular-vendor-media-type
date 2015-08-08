@@ -52,12 +52,12 @@ GET /devices
 Accept: */*,application/vnd.appname.v1+json
 ```
 
-Note: only the configured MIME types will be altered, you can use the 
-`httpRequestInterceptorVendorMimeTypeProvider.matchingMimeTypes` method for specifying the desired ones.
+Note: only the configured media types will be altered, you can use the 
+`httpRequestInterceptorVendorMediaTypeProvider.matchingMediaTypes` method for specifying the desired ones.
 
 ## Options
 
-`httpRequestInterceptorVendorMimeTypeProvider` defines a set of methods for configuring its behaviour
+`httpRequestInterceptorVendorMediaTypeProvider` defines a set of methods for configuring its behaviour
 
 ### matchingRequests
 Default value: `[\.*\]`
