@@ -4,18 +4,7 @@
       return $httpProvider.interceptors.push('httpRequestInterceptorVendorMediaType');
     }
   ]).provider('httpRequestInterceptorVendorMediaType', function() {
-    var HeaderProcessor, HttpRequestInterceptorVendorMediaTypeProvider, MediaType, MediaTypeParser, MediaTypeTransformer, append, parseMediaTypes;
-    parseMediaTypes = function(parser, mediaTypes) {
-      var i, len, mediaType, types;
-      types = [];
-      if ((mediaTypes != null) && mediaTypes.length > 0) {
-        for (i = 0, len = mediaTypes.length; i < len; i++) {
-          mediaType = mediaTypes[i];
-          types.push(parser.parse(mediaType));
-        }
-      }
-      return types;
-    };
+    var HeaderProcessor, HttpRequestInterceptorVendorMediaTypeProvider, MediaType, MediaTypeParser, MediaTypeTransformer, append;
     append = function(parts, value) {
       if (value != null) {
         return parts.push(value);
@@ -98,14 +87,15 @@
 
     })();
     HeaderProcessor = (function() {
-      var SEPARATOR;
+      var SEPARATOR, parseMediaTypes;
 
       SEPARATOR = ',';
 
-      function HeaderProcessor(parser, config) {
-        this.parser = parser;
+      function HeaderProcessor(config) {
         this.config = config;
-        this.transformer = new MediaTypeTransformer(config.vendor, config.useVersionParam);
+        this.parser = new MediaTypeParser(this.config.mediaTypePattern);
+        this.transformer = new MediaTypeTransformer(this.config.vendor, this.config.useVersionParam);
+        this.mediaTypes = parseMediaTypes(this.parser, this.config.mediaTypes);
       }
 
       HeaderProcessor.prototype.process = function(header) {
@@ -132,7 +122,7 @@
 
       HeaderProcessor.prototype.matchesMediaTypes = function(headerMediaType) {
         var i, len, mediaType, ref;
-        ref = this.config.mediaTypes;
+        ref = this.mediaTypes;
         for (i = 0, len = ref.length; i < len; i++) {
           mediaType = ref[i];
           if (mediaType.equal(headerMediaType)) {
@@ -140,6 +130,18 @@
           }
         }
         return false;
+      };
+
+      parseMediaTypes = function(parser, mediaTypes) {
+        var i, len, mediaType, types;
+        types = [];
+        if ((mediaTypes != null) && mediaTypes.length > 0) {
+          for (i = 0, len = mediaTypes.length; i < len; i++) {
+            mediaType = mediaTypes[i];
+            types.push(parser.parse(mediaType));
+          }
+        }
+        return types;
       };
 
       return HeaderProcessor;
@@ -183,14 +185,14 @@
       };
 
       HttpRequestInterceptorVendorMediaTypeProvider.prototype.$get = function($q) {
-        var headers, matchesPath, mediaTypes, parser, paths, processor, useVersionParam, vendor;
-        parser = new MediaTypeParser(MEDIA_TYPE_PATTERN);
+        var headers, matchesPath, mediaTypes, paths, processor, useVersionParam, vendor;
         headers = this.headers;
         paths = this.paths;
-        mediaTypes = parseMediaTypes(parser, this.mediaTypes);
+        mediaTypes = this.mediaTypes;
         vendor = this.vendor;
         useVersionParam = this.useVersionParam;
-        processor = new HeaderProcessor(parser, {
+        processor = new HeaderProcessor({
+          mediaTypePattern: MEDIA_TYPE_PATTERN,
           mediaTypes: mediaTypes,
           vendor: vendor,
           useVersionParam: useVersionParam

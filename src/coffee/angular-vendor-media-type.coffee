@@ -4,14 +4,6 @@ angular.module 'ngVendorMediaType', []
 ]
 .provider('httpRequestInterceptorVendorMediaType', ->
 
-  parseMediaTypes = (parser, mediaTypes) ->
-    types = []
-    if mediaTypes? and mediaTypes.length > 0
-      for mediaType in mediaTypes
-        types.push(parser.parse(mediaType))
-
-    types
-
   append = (parts, value) ->
     if value?
       parts.push value
@@ -75,10 +67,11 @@ angular.module 'ngVendorMediaType', []
 
     SEPARATOR = ','
 
-    constructor: (parser, config) ->
-      @parser = parser
+    constructor: (config) ->
       @config = config
-      @transformer = new MediaTypeTransformer(config.vendor, config.useVersionParam)
+      @parser = new MediaTypeParser(@config.mediaTypePattern)
+      @transformer = new MediaTypeTransformer(@config.vendor, @config.useVersionParam)
+      @mediaTypes = parseMediaTypes(@parser, @config.mediaTypes)
 
     process: (header) ->
       unless header? and header
@@ -100,10 +93,18 @@ angular.module 'ngVendorMediaType', []
       return parseMediaTypes(@parser, header.split(SEPARATOR))
 
     matchesMediaTypes: (headerMediaType) ->
-      for mediaType in @config.mediaTypes
+      for mediaType in @mediaTypes
         if mediaType.equal(headerMediaType)
           return true
       return false
+
+    parseMediaTypes = (parser, mediaTypes) ->
+      types = []
+      if mediaTypes? and mediaTypes.length > 0
+        for mediaType in mediaTypes
+          types.push(parser.parse(mediaType))
+
+      types
 
   class HttpRequestInterceptorVendorMediaTypeProvider
 
@@ -122,15 +123,15 @@ angular.module 'ngVendorMediaType', []
       @
 
     $get: ($q) ->
-      parser = new MediaTypeParser(MEDIA_TYPE_PATTERN)
 
       headers = @headers
       paths = @paths
-      mediaTypes = parseMediaTypes(parser, @mediaTypes)
+      mediaTypes = @mediaTypes
       vendor = @vendor
       useVersionParam = @useVersionParam
 
-      processor = new HeaderProcessor(parser, {
+      processor = new HeaderProcessor({
+        mediaTypePattern: MEDIA_TYPE_PATTERN
         mediaTypes: mediaTypes
         vendor: vendor
         useVersionParam: useVersionParam
